@@ -1,6 +1,7 @@
 use async_trait::async_trait;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
+use std::time::Duration;
 use tracing::debug;
 
 use crate::error::TranslationError;
@@ -32,7 +33,11 @@ impl LibreTranslateProvider {
         Self {
             base_url,
             api_key,
-            client: Client::new(),
+            client: Client::builder()
+                .timeout(Duration::from_secs(30))
+                .connect_timeout(Duration::from_secs(10))
+                .build()
+                .unwrap_or_else(|_| Client::new()),
         }
     }
 }

@@ -47,10 +47,10 @@ services:
       - TOOLS__ENABLED=${TOOLS_ENABLED:-true}
       - TOOLS__WEB_SEARCH__API_KEY=${TOOLS_WEB_SEARCH_API_KEY}
       # Translation configuration
-      - TRANSLATION__ENABLED=true
+      - TRANSLATION__ENABLED=${TRANSLATION_ENABLED:-false}
       - TRANSLATION__LIBRETRANSLATE_URL=http://libretranslate:5000
-      - TRANSLATION__GROUPS=group.RAp6dMHTmv+fazji62vXDl1K42Llvydfp1QlNxZQ70s=:en:es
-      - TRANSLATION__ALSO_CHAT=false
+      - TRANSLATION__GROUPS=${TRANSLATION_GROUPS:-}
+      - TRANSLATION__ALSO_CHAT=${TRANSLATION_ALSO_CHAT:-false}
       # Payment/credit tracking (set to true to enable)
       - PAYMENTS__ENABLED=false
       # Dstack TEE socket - provided by Phala CVM

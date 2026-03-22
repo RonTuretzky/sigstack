@@ -82,11 +82,11 @@ impl TranslationInterceptor {
         }
 
         debug!(
-            "Translating message in group {} ({} <-> {}): {}",
+            "Translating message in group {} ({} <-> {}), text_len={}",
             group_id,
             lang_a,
             lang_b,
-            &message.text[..message.text.len().min(50)]
+            message.text.len(),
         );
 
         match self.translator.translate_if_needed(&message.text, lang_a, lang_b).await {

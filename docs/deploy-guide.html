@@ -404,7 +404,7 @@ libretranslate:
       <tr><th>Variable</th><th>Value</th></tr>
       <tr><td>NEAR_AI_API_KEY</td><td>Your NEAR AI API key</td></tr>
       <tr><td>TRANSLATION__ENABLED</td><td><code>true</code></td></tr>
-      <tr><td>TRANSLATION_GROUPS</td><td><code>GROUP_ID:en:es</code> <span class="tag">set after registration</span></td></tr>
+      <tr><td>TRANSLATION__GROUPS</td><td><code>GROUP_ID:en:es</code> <span class="tag">set after registration</span></td></tr>
       <tr><td>LT_LOAD_ONLY</td><td><code>en,es</code> (or your language pair)</td></tr>
     </table>
     <div class="card">
@@ -421,18 +421,19 @@ libretranslate:
   <div class="content">
     <p style="color:#999;margin-bottom:16px;font-size:14px;">Get your CVM endpoint first:</p>
     <pre><code><span class="cmd">phala</span> cvms get <span class="var">APP_ID</span>
-<span class="comment"># endpoint: https://[app-id]-8080.dstack-prod5.phala.network</span></code></pre>
+<span class="comment"># endpoint example: https://[app-id]-8080.dstack-prod5.phala.network</span>
+<span class="comment"># use [endpoint] below as shorthand for the full URL above</span></code></pre>
     <p style="color:#999;margin:16px 0;font-size:14px;">Get a captcha from <span style="color:#60a5fa">signalcaptchas.org/registration/generate.html</span>, then:</p>
     <pre><code><span class="comment"># Request verification code</span>
-<span class="cmd">curl</span> <span class="flag">-X POST</span> <span class="url">https://[endpoint]-8080/v1/register/+1YOURNUMBER</span> \
+<span class="cmd">curl</span> <span class="flag">-X POST</span> <span class="url">https://[app-id]-8080.dstack-prod5.phala.network/v1/register/+1YOURNUMBER</span> \
   <span class="flag">-H</span> <span class="str">"Content-Type: application/json"</span> \
   <span class="flag">-d</span> <span class="str">'{"captcha": "signalcaptcha://..."}'</span>
 
 <span class="comment"># Enter the SMS code</span>
-<span class="cmd">curl</span> <span class="flag">-X POST</span> <span class="url">https://[endpoint]-8080/v1/register/+1YOURNUMBER/verify/CODE</span>
+<span class="cmd">curl</span> <span class="flag">-X POST</span> <span class="url">https://[app-id]-8080.dstack-prod5.phala.network/v1/register/+1YOURNUMBER/verify/CODE</span>
 
 <span class="comment"># Set profile name</span>
-<span class="cmd">curl</span> <span class="flag">-X PUT</span> <span class="url">https://[endpoint]-8080/v1/profiles/+1YOURNUMBER</span> \
+<span class="cmd">curl</span> <span class="flag">-X PUT</span> <span class="url">https://[app-id]-8080.dstack-prod5.phala.network/v1/profiles/+1YOURNUMBER</span> \
   <span class="flag">-H</span> <span class="str">"Content-Type: application/json"</span> \
   <span class="flag">-d</span> <span class="str">'{"name": "Translate Bot"}'</span></code></pre>
   </div>
@@ -445,7 +446,7 @@ libretranslate:
   <div class="content">
     <p style="color:#999;margin-bottom:16px;font-size:15px;">Add the bot's phone number to your Signal group, then find the group ID:</p>
     <pre><code><span class="comment"># Option A: List groups via Signal CLI API</span>
-<span class="cmd">curl</span> <span class="url">https://[endpoint]-8080/v1/groups/+1BOTNUMBER</span>
+<span class="cmd">curl</span> <span class="url">https://[app-id]-8080.dstack-prod5.phala.network/v1/groups/+1BOTNUMBER</span>
 
 <span class="comment"># Option B: Send a message in the group, then check logs</span>
 <span class="cmd">phala</span> cvms logs <span class="var">APP_ID</span>

@@ -139,9 +139,17 @@ impl Translator {
 
         // Truncate if needed
         let text_to_translate = if text.len() > self.config.max_message_length {
-            let truncated = &text[..self.config.max_message_length];
-            // Find last word boundary
-            let end = truncated.rfind(' ').unwrap_or(self.config.max_message_length);
+            // Find the largest valid char boundary not exceeding max_message_length
+            let mut safe_end = 0;
+            for (idx, ch) in text.char_indices() {
+                if idx >= self.config.max_message_length {
+                    break;
+                }
+                safe_end = idx + ch.len_utf8();
+            }
+            let truncated = &text[..safe_end];
+            // Find last word boundary within the truncated text
+            let end = truncated.rfind(' ').unwrap_or(truncated.len());
             format!("{}...", &text[..end])
         } else {
             text.to_string()
