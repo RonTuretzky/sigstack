@@ -33,6 +33,7 @@ Just send a message to chat with AI.
 **Commands:**
 - !verify <challenge> - Get TEE attestation with your challenge
 - !clear - Clear conversation history
+- !kanban - Generate a Mermaid Kanban board of tasks from this conversation
 - !models - List available AI models
 - !balance - Check your credit balance
 - !deposit - Get deposit addresses for USDC

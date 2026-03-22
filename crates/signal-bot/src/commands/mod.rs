@@ -5,6 +5,7 @@ mod chat;
 mod clear;
 mod deposit;
 mod help;
+mod kanban;
 mod models;
 mod verify;
 
@@ -13,6 +14,7 @@ pub use chat::ChatHandler;
 pub use clear::ClearHandler;
 pub use deposit::DepositHandler;
 pub use help::HelpHandler;
+pub use kanban::KanbanHandler;
 pub use models::ModelsHandler;
 pub use verify::VerifyHandler;
 

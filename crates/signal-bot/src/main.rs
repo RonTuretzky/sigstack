@@ -191,6 +191,7 @@ async fn main() -> AppResult<()> {
         Box::new(ClearHandler::new(conversations.clone())),
         Box::new(HelpHandler::new()),
         Box::new(ModelsHandler::new(near_ai.clone())),
+        Box::new(KanbanHandler::new(near_ai.clone(), conversations.clone())),
     ];
 
     // Add payment handlers if enabled
