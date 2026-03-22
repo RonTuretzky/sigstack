@@ -45,9 +45,13 @@ pub struct SignalConfig {
     #[serde(default = "default_signal_service")]
     pub service_url: String,
 
-    /// Poll interval for messages
+    /// Poll interval for messages (only used in polling mode)
     #[serde(default = "default_poll_interval", with = "humantime_serde")]
     pub poll_interval: Duration,
+
+    /// Use WebSocket for receiving messages (requires Signal CLI json-rpc mode)
+    #[serde(default)]
+    pub use_websocket: bool,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -195,6 +199,7 @@ impl Default for SignalConfig {
         Self {
             service_url: default_signal_service(),
             poll_interval: default_poll_interval(),
+            use_websocket: false,
         }
     }
 }

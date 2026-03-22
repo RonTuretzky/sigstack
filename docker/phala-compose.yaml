@@ -7,10 +7,9 @@ services:
     image: bbernhard/signal-cli-rest-api@sha256:c51c117d030d051f0cf2ef17f2cb135f1301810f9526a224be67daded8f272d6
     container_name: signal-api
     environment:
-      - MODE=normal
-      # NOTE: Do NOT use AUTO_RECEIVE_SCHEDULE - it conflicts with signal-bot's polling!
-      # The signal-bot polls /v1/receive directly. AUTO_RECEIVE_SCHEDULE would consume
-      # messages before the bot can get them.
+      - MODE=json-rpc
+      # json-rpc mode: persistent JVM daemon, WebSocket message streaming.
+      # The bot connects via WebSocket to /v1/receive/{account} instead of polling.
       - LOG_LEVEL=info
     # TEMPORARY: Port exposed for debugging - remove after fixing
     ports:
@@ -32,6 +31,7 @@ services:
     environment:
       # Signal configuration - polls ALL registered accounts automatically
       - SIGNAL__SERVICE_URL=http://signal-api:8080
+      - SIGNAL__USE_WEBSOCKET=true
       # NEAR AI configuration - hardcoded for debugging
       - NEAR_AI__API_KEY=${NEAR_AI_API_KEY}
       - NEAR_AI__BASE_URL=https://cloud-api.near.ai/v1

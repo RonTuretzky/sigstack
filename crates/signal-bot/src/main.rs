@@ -220,7 +220,13 @@ async fn main() -> AppResult<()> {
     info!("Listening for messages...");
 
     // Start message receiver
-    let receiver = MessageReceiver::new((*signal).clone(), config.signal.poll_interval);
+    let receiver = if config.signal.use_websocket {
+        info!("Using WebSocket receiver (json-rpc mode)");
+        MessageReceiver::new_websocket((*signal).clone(), &config.signal.service_url)
+    } else {
+        info!("Using HTTP polling receiver (poll_interval={:?})", config.signal.poll_interval);
+        MessageReceiver::new((*signal).clone(), config.signal.poll_interval)
+    };
     let mut stream = Box::pin(receiver.stream());
 
     // Main message loop

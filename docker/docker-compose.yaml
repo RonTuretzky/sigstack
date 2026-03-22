@@ -7,8 +7,7 @@ services:
     image: bbernhard/signal-cli-rest-api@sha256:04ee57f9819a90c89fbee46f74e080a032f5f05decf6e4b4a4e1f45d050ed9c8
     container_name: signal-api
     environment:
-      - MODE=normal
-      - AUTO_RECEIVE_SCHEDULE=
+      - MODE=json-rpc
       - LOG_LEVEL=info
     volumes:
       - /var/run/dstack.sock:/var/run/dstack.sock:ro
@@ -32,6 +31,7 @@ services:
     container_name: signal-bot
     environment:
       - SIGNAL__SERVICE_URL=http://signal-api:8080
+      - SIGNAL__USE_WEBSOCKET=true
       - SIGNAL__PHONE_NUMBER=${SIGNAL_PHONE}
       - NEAR_AI__API_KEY=${NEAR_AI_API_KEY}
       - NEAR_AI__BASE_URL=${NEAR_AI_BASE_URL:-https://cloud-api.near.ai/v1}
