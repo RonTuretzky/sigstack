@@ -113,7 +113,8 @@ impl SignalClient {
             message: message.to_string(),
             number: Some(from_number.to_string()),
             recipients: Some(vec![recipient_value]),
-            quote: None,
+            quote_timestamp: None,
+            quote_author: None,
         };
 
         let response = self
@@ -164,7 +165,8 @@ impl SignalClient {
             message: message.to_string(),
             number: Some(from_number.to_string()),
             recipients: Some(vec![recipient_value]),
-            quote: Some(quote),
+            quote_timestamp: Some(quote.id),
+            quote_author: Some(quote.author.clone()),
         };
 
         let response = self.client

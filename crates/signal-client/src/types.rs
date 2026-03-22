@@ -52,7 +52,9 @@ pub struct SendMessageRequest {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub recipients: Option<Vec<String>>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub quote: Option<Quote>,
+    pub quote_timestamp: Option<i64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub quote_author: Option<String>,
 }
 
 /// Outgoing group message request.
