@@ -193,6 +193,19 @@ async fn main() -> AppResult<()> {
         Box::new(ModelsHandler::new(near_ai.clone())),
     ];
 
+    // Add summary handler if local LLM is enabled
+    if config.local_llm.enabled {
+        handlers.push(Box::new(SummaryHandler::new(
+            conversations.clone(),
+            config.local_llm.url.clone(),
+            config.local_llm.model.clone(),
+        )));
+        info!(
+            "Summary command enabled (local LLM: {} at {})",
+            config.local_llm.model, config.local_llm.url
+        );
+    }
+
     // Add payment handlers if enabled
     if let Some(ref store) = credit_store {
         handlers.push(Box::new(BalanceHandler::new(store.clone())));

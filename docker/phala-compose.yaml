@@ -25,6 +25,13 @@ services:
       start_period: 30s
     restart: unless-stopped
 
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    volumes:
+      - ollama-models:/root/.ollama
+    restart: unless-stopped
+
   signal-bot:
     # Image hosted on Docker Hub
     image: zaki1iqlusion/signal-bot-tee:v0.14.0
@@ -48,6 +55,10 @@ services:
       - TOOLS__WEB_SEARCH__API_KEY=${TOOLS_WEB_SEARCH_API_KEY}
       # Payment/credit tracking (set to true to enable)
       - PAYMENTS__ENABLED=false
+      # Local LLM for summarization (runs in TEE)
+      - LOCAL_LLM__ENABLED=${LOCAL_LLM_ENABLED:-true}
+      - LOCAL_LLM__URL=http://ollama:11434
+      - LOCAL_LLM__MODEL=${LOCAL_LLM_MODEL:-llama3.2:3b}
       # Dstack TEE socket - provided by Phala CVM
       - DSTACK__SOCKET_PATH=/var/run/dstack.sock
     volumes:
@@ -55,6 +66,7 @@ services:
       - /var/run/dstack.sock:/var/run/dstack.sock:ro
     depends_on:
       - signal-api
+      - ollama
     restart: unless-stopped
 
   signal-registration-proxy:
@@ -92,4 +104,6 @@ volumes:
   signal-config-v3:
     driver: local
   registry-data:
+    driver: local
+  ollama-models:
     driver: local

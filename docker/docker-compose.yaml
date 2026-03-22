@@ -25,6 +25,21 @@ services:
       start_period: 30s
     restart: unless-stopped
 
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    volumes:
+      - ollama-models:/root/.ollama
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/api/tags"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+
   signal-bot:
     build:
       context: ..
@@ -40,12 +55,17 @@ services:
       - CONVERSATION__TTL=${CONVERSATION_TTL:-24h}
       - BOT__LOG_LEVEL=${LOG_LEVEL:-info}
       - DSTACK__SOCKET_PATH=/var/run/dstack.sock
+      - LOCAL_LLM__ENABLED=${LOCAL_LLM_ENABLED:-true}
+      - LOCAL_LLM__URL=http://ollama:11434
+      - LOCAL_LLM__MODEL=${LOCAL_LLM_MODEL:-llama3.2:3b}
     volumes:
       - /var/run/dstack.sock:/var/run/dstack.sock:ro
     networks:
       - internal
     depends_on:
       signal-api:
+        condition: service_healthy
+      ollama:
         condition: service_healthy
     restart: unless-stopped
 
@@ -86,6 +106,8 @@ volumes:
   signal-config:
     driver: local
   registry-data:
+    driver: local
+  ollama-models:
     driver: local
 
 networks:
