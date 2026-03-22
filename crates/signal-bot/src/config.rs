@@ -34,9 +34,6 @@ pub struct Config {
     #[serde(default)]
     pub payments: x402_payments::PaymentConfig,
 
-    /// Local LLM (Ollama) configuration for summarization
-    #[serde(default)]
-    pub local_llm: LocalLlmConfig,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -147,39 +144,6 @@ pub struct WeatherConfig {
 pub struct CalculatorConfig {
     #[serde(default = "default_true")]
     pub enabled: bool,
-}
-
-#[derive(Debug, Clone, Deserialize)]
-pub struct LocalLlmConfig {
-    /// Enable local LLM summarization
-    #[serde(default = "default_true")]
-    pub enabled: bool,
-
-    /// Ollama API URL
-    #[serde(default = "default_ollama_url")]
-    pub url: String,
-
-    /// Model to use for summarization
-    #[serde(default = "default_ollama_model")]
-    pub model: String,
-}
-
-impl Default for LocalLlmConfig {
-    fn default() -> Self {
-        Self {
-            enabled: default_true(),
-            url: default_ollama_url(),
-            model: default_ollama_model(),
-        }
-    }
-}
-
-fn default_ollama_url() -> String {
-    "http://ollama:11434".into()
-}
-
-fn default_ollama_model() -> String {
-    "llama3.2:3b".into()
 }
 
 // Default implementations

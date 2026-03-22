@@ -1,64 +1,27 @@
-//! Summary command - generates a daily conversation summary using a local LLM.
+//! Summary command - generates a daily conversation summary using NEAR AI.
 
 use crate::commands::CommandHandler;
 use crate::error::AppResult;
 use async_trait::async_trait;
 use conversation_store::ConversationStore;
-use reqwest::Client;
-use serde::{Deserialize, Serialize};
+use near_ai_client::{Message, NearAiClient};
 use signal_client::BotMessage;
 use std::sync::Arc;
-use std::time::Duration;
 use tracing::{debug, error, instrument};
 
-/// Ollama-compatible chat request (OpenAI format).
-#[derive(Debug, Serialize)]
-struct OllamaChatRequest {
-    model: String,
-    messages: Vec<OllamaMessage>,
-    stream: bool,
-}
-
-#[derive(Debug, Serialize)]
-struct OllamaMessage {
-    role: String,
-    content: String,
-}
-
-/// Ollama chat response.
-#[derive(Debug, Deserialize)]
-struct OllamaChatResponse {
-    message: Option<OllamaResponseMessage>,
-}
-
-#[derive(Debug, Deserialize)]
-struct OllamaResponseMessage {
-    content: Option<String>,
-}
-
 pub struct SummaryHandler {
+    near_ai: Arc<NearAiClient>,
     conversations: Arc<ConversationStore>,
-    ollama_url: String,
-    ollama_model: String,
-    http_client: Client,
 }
 
 impl SummaryHandler {
     pub fn new(
+        near_ai: Arc<NearAiClient>,
         conversations: Arc<ConversationStore>,
-        ollama_url: String,
-        ollama_model: String,
     ) -> Self {
-        let http_client = Client::builder()
-            .timeout(Duration::from_secs(120))
-            .build()
-            .expect("Failed to create HTTP client for Ollama");
-
         Self {
+            near_ai,
             conversations,
-            ollama_url,
-            ollama_model,
-            http_client,
         }
     }
 
@@ -83,60 +46,6 @@ impl SummaryHandler {
         }
         transcript
     }
-
-    /// Call the local Ollama instance to summarize the transcript.
-    async fn summarize(&self, transcript: &str) -> Result<String, String> {
-        let system_prompt = "You are a concise summarizer. Given a conversation transcript from today, \
-            produce a clear summary of the key topics discussed, decisions made, questions asked, \
-            and any important information exchanged. Keep it brief and organized with bullet points. \
-            Do not include timestamps in the summary.";
-
-        let request = OllamaChatRequest {
-            model: self.ollama_model.clone(),
-            messages: vec![
-                OllamaMessage {
-                    role: "system".into(),
-                    content: system_prompt.into(),
-                },
-                OllamaMessage {
-                    role: "user".into(),
-                    content: format!(
-                        "Please summarize today's conversation:\n\n{}",
-                        transcript
-                    ),
-                },
-            ],
-            stream: false,
-        };
-
-        let url = format!("{}/api/chat", self.ollama_url);
-        debug!("Sending summary request to Ollama at {}", url);
-
-        let response = self
-            .http_client
-            .post(&url)
-            .json(&request)
-            .send()
-            .await
-            .map_err(|e| format!("Failed to reach local LLM: {}", e))?;
-
-        if !response.status().is_success() {
-            let status = response.status();
-            let body = response.text().await.unwrap_or_default();
-            return Err(format!("Local LLM returned error {}: {}", status, body));
-        }
-
-        let chat_response: OllamaChatResponse = response
-            .json()
-            .await
-            .map_err(|e| format!("Failed to parse LLM response: {}", e))?;
-
-        chat_response
-            .message
-            .and_then(|m| m.content)
-            .filter(|c| !c.is_empty())
-            .ok_or_else(|| "Local LLM returned empty response".into())
-    }
 }
 
 #[async_trait]
@@ -158,7 +67,6 @@ impl CommandHandler for SummaryHandler {
             return Ok("No messages found for today. Start a conversation first!".into());
         }
 
-        // Filter to only user/assistant messages with content
         let relevant: Vec<_> = today_messages
             .iter()
             .filter(|m| (m.role == "user" || m.role == "assistant") && m.content.is_some())
@@ -176,7 +84,20 @@ impl CommandHandler for SummaryHandler {
             &conversation_id[..conversation_id.len().min(12)]
         );
 
-        match self.summarize(&transcript).await {
+        let messages = vec![
+            Message::system(
+                "You are a concise summarizer. Given a conversation transcript from today, \
+                 produce a clear summary of the key topics discussed, decisions made, questions asked, \
+                 and any important information exchanged. Keep it brief and organized with bullet points. \
+                 Do not include timestamps in the summary.",
+            ),
+            Message::user(format!(
+                "Please summarize today's conversation:\n\n{}",
+                transcript
+            )),
+        ];
+
+        match self.near_ai.chat(messages, Some(0.3), None).await {
             Ok(summary) => {
                 let header = format!(
                     "**Today's Conversation Summary** ({} messages)\n\n",
@@ -187,8 +108,7 @@ impl CommandHandler for SummaryHandler {
             Err(e) => {
                 error!("Summary generation failed: {}", e);
                 Ok(format!(
-                    "Failed to generate summary: {}. \
-                     Make sure the local LLM service is running.",
+                    "Failed to generate summary. Please try again. ({})",
                     e
                 ))
             }
