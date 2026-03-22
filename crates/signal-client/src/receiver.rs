@@ -31,7 +31,6 @@ impl MessageReceiver {
         async_stream::stream! {
             let mut accounts: Vec<String> = Vec::new();
             let mut last_account_refresh = std::time::Instant::now();
-
             loop {
                 // Refresh account list periodically or on first run
                 if accounts.is_empty()
@@ -48,8 +47,7 @@ impl MessageReceiver {
                         Err(e) => {
                             error!("Failed to list accounts: {}", e);
                             if accounts.is_empty() {
-                                // Can't proceed without accounts
-                                sleep(Duration::from_secs(5)).await;
+                                sleep(Duration::from_secs(60)).await;
                                 continue;
                             }
                             // Continue with cached accounts
@@ -58,8 +56,8 @@ impl MessageReceiver {
                 }
 
                 if accounts.is_empty() {
-                    warn!("No registered accounts found, waiting...");
-                    sleep(Duration::from_secs(10)).await;
+                    warn!("No registered accounts found, waiting 60s...");
+                    sleep(Duration::from_secs(60)).await;
                     continue;
                 }
 
