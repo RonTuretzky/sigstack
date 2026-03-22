@@ -4,7 +4,7 @@
 services:
   signal-api:
     # Pinned to specific digest for TEE attestation integrity
-    image: bbernhard/signal-cli-rest-api@sha256:04ee57f9819a90c89fbee46f74e080a032f5f05decf6e4b4a4e1f45d050ed9c8
+    image: bbernhard/signal-cli-rest-api@sha256:c51c117d030d051f0cf2ef17f2cb135f1301810f9526a224be67daded8f272d6
     container_name: signal-api
     environment:
       - MODE=normal

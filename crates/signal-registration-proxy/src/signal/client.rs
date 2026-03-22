@@ -18,7 +18,7 @@ impl SignalRegistrationClient {
     /// Create a new Signal registration client.
     pub fn new(base_url: impl Into<String>) -> Result<Self, ProxyError> {
         let client = Client::builder()
-            .timeout(Duration::from_secs(30))
+            .timeout(Duration::from_secs(120))
             .build()
             .map_err(|e| ProxyError::Internal(format!("Failed to create HTTP client: {}", e)))?;
 
