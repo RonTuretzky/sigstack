@@ -16,7 +16,7 @@ services:
     ports:
       - "8080:8080"
     volumes:
-      - signal-config-v3:/home/.local/share/signal-cli
+      - signal-config-v5:/home/.local/share/signal-cli
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/v1/health"]
       interval: 30s
@@ -27,7 +27,7 @@ services:
 
   signal-bot:
     # Image hosted on Docker Hub
-    image: zaki1iqlusion/signal-bot-tee:v0.14.0
+    image: turetzkyron/signal-bot-tee:latest
     container_name: signal-bot
     environment:
       # Signal configuration - polls ALL registered accounts automatically
@@ -46,6 +46,11 @@ services:
       # Tools configuration
       - TOOLS__ENABLED=${TOOLS_ENABLED:-true}
       - TOOLS__WEB_SEARCH__API_KEY=${TOOLS_WEB_SEARCH_API_KEY}
+      # Translation configuration
+      - TRANSLATION__ENABLED=true
+      - TRANSLATION__LIBRETRANSLATE_URL=http://libretranslate:5000
+      - TRANSLATION__GROUPS=group.RAp6dMHTmv+fazji62vXDl1K42Llvydfp1QlNxZQ70s=:en:es
+      - TRANSLATION__ALSO_CHAT=false
       # Payment/credit tracking (set to true to enable)
       - PAYMENTS__ENABLED=false
       # Dstack TEE socket - provided by Phala CVM
@@ -59,7 +64,7 @@ services:
 
   signal-registration-proxy:
     # Image hosted on Docker Hub
-    image: zaki1iqlusion/signal-registration-proxy:v0.9.0
+    image: turetzkyron/signal-registration-proxy:latest
     container_name: signal-registration-proxy
     environment:
       # Signal API (internal)
@@ -88,8 +93,22 @@ services:
       - signal-api
     restart: unless-stopped
 
+  libretranslate:
+    image: libretranslate/libretranslate:v1.6.3
+    container_name: libretranslate
+    environment:
+      - LT_LOAD_ONLY=${LT_LOAD_ONLY:-en,es}
+      - LT_DISABLE_WEB_UI=true
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/languages"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 120s
+    restart: unless-stopped
+
 volumes:
-  signal-config-v3:
+  signal-config-v5:
     driver: local
   registry-data:
     driver: local

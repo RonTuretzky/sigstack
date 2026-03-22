@@ -111,6 +111,7 @@ impl SignalClient {
             message: message.to_string(),
             number: Some(from_number.to_string()),
             recipients: Some(vec![recipient.to_string()]),
+            quote: None,
         };
 
         let response = self
@@ -127,6 +128,39 @@ impl SignalClient {
         }
 
         debug!("Sent message from {} to {}", from_number, recipient);
+        Ok(())
+    }
+
+    /// Send a message with a quote (reply to a specific message).
+    #[instrument(skip(self, message, quote))]
+    pub async fn send_with_quote(
+        &self,
+        from_number: &str,
+        recipient: &str,
+        message: &str,
+        quote: Quote,
+    ) -> Result<(), SignalError> {
+        let request = SendMessageRequest {
+            message: message.to_string(),
+            number: Some(from_number.to_string()),
+            recipients: Some(vec![recipient.to_string()]),
+            quote: Some(quote),
+        };
+
+        let response = self
+            .client
+            .post(format!("{}/v2/send", self.base_url))
+            .json(&request)
+            .send()
+            .await?;
+
+        if !response.status().is_success() {
+            let msg = response.text().await.unwrap_or_default();
+            warn!("Send with quote failed: {}", msg);
+            return Err(SignalError::SendFailed(msg));
+        }
+
+        debug!("Sent quoted message from {} to {}", from_number, recipient);
         Ok(())
     }
 

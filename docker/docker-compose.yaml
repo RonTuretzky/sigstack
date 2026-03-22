@@ -40,6 +40,11 @@ services:
       - CONVERSATION__TTL=${CONVERSATION_TTL:-24h}
       - BOT__LOG_LEVEL=${LOG_LEVEL:-info}
       - DSTACK__SOCKET_PATH=/var/run/dstack.sock
+      # Translation configuration
+      - TRANSLATION__ENABLED=${TRANSLATION_ENABLED:-false}
+      - TRANSLATION__LIBRETRANSLATE_URL=http://libretranslate:5000
+      - TRANSLATION__GROUPS=${TRANSLATION_GROUPS:-}
+      - TRANSLATION__ALSO_CHAT=${TRANSLATION_ALSO_CHAT:-false}
     volumes:
       - /var/run/dstack.sock:/var/run/dstack.sock:ro
     networks:
@@ -80,6 +85,22 @@ services:
       timeout: 10s
       retries: 3
       start_period: 10s
+    restart: unless-stopped
+
+  libretranslate:
+    image: libretranslate/libretranslate:v1.6.3
+    container_name: libretranslate
+    environment:
+      - LT_LOAD_ONLY=${LT_LOAD_ONLY:-en,es}
+      - LT_DISABLE_WEB_UI=true
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/languages"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 120s
     restart: unless-stopped
 
 volumes:

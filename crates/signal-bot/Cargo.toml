@@ -14,6 +14,7 @@ conversation-store = { path = "../conversation-store" }
 dstack-client = { path = "../dstack-client" }
 signal-client = { path = "../signal-client" }
 tools = { path = "../tools" }
+translation = { path = "../translation" }
 x402-payments = { path = "../x402-payments" }
 
 # Workspace dependencies

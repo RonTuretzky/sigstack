@@ -30,6 +30,10 @@ pub struct Config {
     #[serde(default)]
     pub tools: ToolsConfig,
 
+    /// Translation configuration
+    #[serde(default)]
+    pub translation: TranslationConfig,
+
     /// Payment configuration
     #[serde(default)]
     pub payments: x402_payments::PaymentConfig,
@@ -143,6 +147,46 @@ pub struct WeatherConfig {
 pub struct CalculatorConfig {
     #[serde(default = "default_true")]
     pub enabled: bool,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct TranslationConfig {
+    /// Enable automatic translation
+    #[serde(default)]
+    pub enabled: bool,
+
+    /// LibreTranslate API URL
+    #[serde(default = "default_libretranslate_url")]
+    pub libretranslate_url: String,
+
+    /// Optional LibreTranslate API key
+    #[serde(default)]
+    pub libretranslate_api_key: Option<String>,
+
+    /// Group-to-language-pair mappings.
+    /// Format: "group_id1:en:es,group_id2:en:fr"
+    #[serde(default)]
+    pub groups: String,
+
+    /// Whether translated groups should also get AI chat responses
+    #[serde(default)]
+    pub also_chat: bool,
+}
+
+impl Default for TranslationConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            libretranslate_url: default_libretranslate_url(),
+            libretranslate_api_key: None,
+            groups: String::new(),
+            also_chat: false,
+        }
+    }
+}
+
+fn default_libretranslate_url() -> String {
+    "http://localhost:5000".into()
 }
 
 // Default implementations

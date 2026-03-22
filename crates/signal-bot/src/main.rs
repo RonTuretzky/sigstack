@@ -3,6 +3,7 @@
 use signal_bot::commands::*;
 use signal_bot::config::Config;
 use signal_bot::error::AppResult;
+use signal_bot::translation_interceptor::TranslationInterceptor;
 use anyhow::Context;
 use conversation_store::ConversationStore;
 use dstack_client::DstackClient;
@@ -200,6 +201,20 @@ async fn main() -> AppResult<()> {
         info!("Payment commands enabled: !balance, !deposit");
     }
 
+    // Initialize translation interceptor if enabled
+    let translation_interceptor = if config.translation.enabled {
+        Some(TranslationInterceptor::new(
+            &config.translation.libretranslate_url,
+            config.translation.libretranslate_api_key.clone(),
+            &config.translation.groups,
+            signal.clone(),
+            config.translation.also_chat,
+        ))
+    } else {
+        info!("Translation disabled");
+        None
+    };
+
     info!("Registered {} command handlers", handlers.len());
     info!("NEAR AI endpoint: {}", config.near_ai.base_url);
     info!("Listening for messages...");
@@ -212,6 +227,14 @@ async fn main() -> AppResult<()> {
     loop {
         tokio::select! {
             Some(message) = stream.next() => {
+                // Translation interceptor runs before command handlers
+                if let Some(ref ti) = translation_interceptor {
+                    let was_translation_group = ti.try_translate(&message).await;
+                    if was_translation_group && !ti.also_chat {
+                        continue;
+                    }
+                }
+
                 // Find matching handler
                 let handler = handlers
                     .iter()
