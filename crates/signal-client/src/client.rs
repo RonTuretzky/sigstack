@@ -20,7 +20,7 @@ impl SignalClient {
     /// Create a new Signal client.
     pub fn new(base_url: impl Into<String>) -> Result<Self, SignalError> {
         let client = Client::builder()
-            .timeout(Duration::from_secs(30))
+            .timeout(Duration::from_secs(120))
             .build()?;
 
         Ok(Self {

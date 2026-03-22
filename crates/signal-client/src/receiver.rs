@@ -70,7 +70,7 @@ impl MessageReceiver {
                                     debug!(
                                         "Received on {}: '{}' from {}",
                                         account,
-                                        &bot_msg.text[..bot_msg.text.len().min(50)],
+                                        &bot_msg.text.chars().take(50).collect::<String>(),
                                         bot_msg.source
                                     );
                                     yield bot_msg;
