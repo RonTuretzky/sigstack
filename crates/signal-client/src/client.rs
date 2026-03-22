@@ -1,5 +1,6 @@
 //! Signal HTTP client.
 
+use base64::Engine;
 use crate::error::SignalError;
 use crate::types::*;
 use reqwest::Client;
@@ -107,10 +108,11 @@ impl SignalClient {
         recipient: &str,
         message: &str,
     ) -> Result<(), SignalError> {
+        let recipient_value = Self::format_recipient(recipient);
         let request = SendMessageRequest {
             message: message.to_string(),
             number: Some(from_number.to_string()),
-            recipients: Some(vec![recipient.to_string()]),
+            recipients: Some(vec![recipient_value]),
             quote: None,
         };
 
@@ -131,7 +133,23 @@ impl SignalClient {
         Ok(())
     }
 
+    /// Format a recipient for the Signal CLI API.
+    /// Group IDs need "group." prefix + base64 encoding for /v2/send.
+    fn format_recipient(recipient: &str) -> String {
+        let is_group = !recipient.starts_with('+') && !recipient.contains('-');
+        if is_group {
+            if recipient.starts_with("group.") {
+                recipient.to_string()
+            } else {
+                format!("group.{}", base64::engine::general_purpose::STANDARD.encode(recipient))
+            }
+        } else {
+            recipient.to_string()
+        }
+    }
+
     /// Send a message with a quote (reply to a specific message).
+    /// Automatically detects group vs direct message based on the recipient format.
     #[instrument(skip(self, message, quote))]
     pub async fn send_with_quote(
         &self,
@@ -140,15 +158,16 @@ impl SignalClient {
         message: &str,
         quote: Quote,
     ) -> Result<(), SignalError> {
+        let recipient_value = Self::format_recipient(recipient);
+
         let request = SendMessageRequest {
             message: message.to_string(),
             number: Some(from_number.to_string()),
-            recipients: Some(vec![recipient.to_string()]),
+            recipients: Some(vec![recipient_value]),
             quote: Some(quote),
         };
 
-        let response = self
-            .client
+        let response = self.client
             .post(format!("{}/v2/send", self.base_url))
             .json(&request)
             .send()

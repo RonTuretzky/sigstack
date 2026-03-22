@@ -49,7 +49,19 @@ pub struct Quote {
 pub struct SendMessageRequest {
     pub message: String,
     pub number: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub recipients: Option<Vec<String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub quote: Option<Quote>,
+}
+
+/// Outgoing group message request.
+#[derive(Debug, Clone, Serialize)]
+pub struct SendGroupMessageRequest {
+    pub message: String,
+    pub number: Option<String>,
+    #[serde(rename = "base64_group")]
+    pub group_id: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub quote: Option<Quote>,
 }
