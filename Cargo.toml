@@ -9,6 +9,7 @@ members = [
     "crates/signal-registration-proxy",
     "crates/tools",
     "crates/x402-payments",
+    "crates/translation",
 ]
 
 [workspace.package]
@@ -52,6 +53,8 @@ async-trait = "0.1"
 futures = "0.3"
 tokio-stream = "0.1"
 async-stream = "0.3"
+tokio-tungstenite = { version = "0.20", features = ["rustls-tls-webpki-roots"] }
+futures-util = "0.3"
 
 # Crypto
 sha2 = "0.10"

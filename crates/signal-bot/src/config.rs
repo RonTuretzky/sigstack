@@ -30,6 +30,10 @@ pub struct Config {
     #[serde(default)]
     pub tools: ToolsConfig,
 
+    /// Translation configuration
+    #[serde(default)]
+    pub translation: TranslationConfig,
+
     /// Payment configuration
     #[serde(default)]
     pub payments: x402_payments::PaymentConfig,
@@ -42,9 +46,13 @@ pub struct SignalConfig {
     #[serde(default = "default_signal_service")]
     pub service_url: String,
 
-    /// Poll interval for messages
+    /// Poll interval for messages (only used in polling mode)
     #[serde(default = "default_poll_interval", with = "humantime_serde")]
     pub poll_interval: Duration,
+
+    /// Use WebSocket for receiving messages (requires Signal CLI json-rpc mode)
+    #[serde(default)]
+    pub use_websocket: bool,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -146,12 +154,53 @@ pub struct CalculatorConfig {
     pub enabled: bool,
 }
 
+#[derive(Debug, Clone, Deserialize)]
+pub struct TranslationConfig {
+    /// Enable automatic translation
+    #[serde(default)]
+    pub enabled: bool,
+
+    /// LibreTranslate API URL
+    #[serde(default = "default_libretranslate_url")]
+    pub libretranslate_url: String,
+
+    /// Optional LibreTranslate API key
+    #[serde(default)]
+    pub libretranslate_api_key: Option<String>,
+
+    /// Group-to-language-pair mappings.
+    /// Format: "group_id1:en:es,group_id2:en:fr"
+    #[serde(default)]
+    pub groups: String,
+
+    /// Whether translated groups should also get AI chat responses
+    #[serde(default)]
+    pub also_chat: bool,
+}
+
+impl Default for TranslationConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            libretranslate_url: default_libretranslate_url(),
+            libretranslate_api_key: None,
+            groups: String::new(),
+            also_chat: false,
+        }
+    }
+}
+
+fn default_libretranslate_url() -> String {
+    "http://localhost:5000".into()
+}
+
 // Default implementations
 impl Default for SignalConfig {
     fn default() -> Self {
         Self {
             service_url: default_signal_service(),
             poll_interval: default_poll_interval(),
+            use_websocket: false,
         }
     }
 }
@@ -228,7 +277,7 @@ fn default_signal_service() -> String {
 }
 
 fn default_poll_interval() -> Duration {
-    Duration::from_millis(200)
+    Duration::from_secs(5)
 }
 
 fn default_near_ai_url() -> String {

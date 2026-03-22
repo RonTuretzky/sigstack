@@ -35,12 +35,37 @@ pub struct GroupInfo {
     pub group_id: String,
 }
 
+/// Quote for replying to a specific message.
+#[derive(Debug, Clone, Serialize)]
+pub struct Quote {
+    pub id: i64,
+    pub author: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub text: Option<String>,
+}
+
 /// Outgoing message request.
 #[derive(Debug, Clone, Serialize)]
 pub struct SendMessageRequest {
     pub message: String,
     pub number: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub recipients: Option<Vec<String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub quote_timestamp: Option<i64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub quote_author: Option<String>,
+}
+
+/// Outgoing group message request.
+#[derive(Debug, Clone, Serialize)]
+pub struct SendGroupMessageRequest {
+    pub message: String,
+    pub number: Option<String>,
+    #[serde(rename = "base64_group")]
+    pub group_id: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub quote: Option<Quote>,
 }
 
 /// Send message response.

@@ -3,6 +3,7 @@
 use signal_bot::commands::*;
 use signal_bot::config::Config;
 use signal_bot::error::AppResult;
+use signal_bot::translation_interceptor::TranslationInterceptor;
 use anyhow::Context;
 use conversation_store::ConversationStore;
 use dstack_client::DstackClient;
@@ -201,18 +202,46 @@ async fn main() -> AppResult<()> {
         info!("Payment commands enabled: !balance, !deposit");
     }
 
+    // Initialize translation interceptor if enabled
+    let translation_interceptor = if config.translation.enabled {
+        Some(TranslationInterceptor::new(
+            &config.translation.libretranslate_url,
+            config.translation.libretranslate_api_key.clone(),
+            &config.translation.groups,
+            signal.clone(),
+            config.translation.also_chat,
+        ))
+    } else {
+        info!("Translation disabled");
+        None
+    };
+
     info!("Registered {} command handlers", handlers.len());
     info!("NEAR AI endpoint: {}", config.near_ai.base_url);
     info!("Listening for messages...");
 
     // Start message receiver
-    let receiver = MessageReceiver::new((*signal).clone(), config.signal.poll_interval);
+    let receiver = if config.signal.use_websocket {
+        info!("Using WebSocket receiver (json-rpc mode)");
+        MessageReceiver::new_websocket((*signal).clone(), &config.signal.service_url)
+    } else {
+        info!("Using HTTP polling receiver (poll_interval={:?})", config.signal.poll_interval);
+        MessageReceiver::new((*signal).clone(), config.signal.poll_interval)
+    };
     let mut stream = Box::pin(receiver.stream());
 
     // Main message loop
     loop {
         tokio::select! {
             Some(message) = stream.next() => {
+                // Translation interceptor runs before command handlers
+                if let Some(ref ti) = translation_interceptor {
+                    let was_translation_group = ti.try_translate(&message).await;
+                    if was_translation_group && !ti.also_chat {
+                        continue;
+                    }
+                }
+
                 // Find matching handler
                 let handler = handlers
                     .iter()

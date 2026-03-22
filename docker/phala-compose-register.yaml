@@ -1,0 +1,46 @@
+# Temporary compose for registration only - no bot polling to cause lock contention
+services:
+  signal-api:
+    image: bbernhard/signal-cli-rest-api@sha256:c51c117d030d051f0cf2ef17f2cb135f1301810f9526a224be67daded8f272d6
+    container_name: signal-api
+    environment:
+      - MODE=normal
+      - LOG_LEVEL=info
+    ports:
+      - "8080:8080"
+    volumes:
+      - signal-config-v6:/home/.local/share/signal-cli
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+
+  signal-registration-proxy:
+    image: turetzkyron/signal-registration-proxy:latest
+    container_name: signal-registration-proxy
+    environment:
+      - SIGNAL__API_URL=http://signal-api:8080
+      - REGISTRY__PATH=/data/registry.enc
+      - SERVER__LISTEN_ADDR=0.0.0.0
+      - SERVER__PORT=8081
+      - DSTACK__SOCKET_PATH=/var/run/dstack.sock
+      - RATE_LIMIT__GLOBAL_PER_MINUTE=60
+      - RATE_LIMIT__PER_NUMBER_PER_HOUR=10
+      - LOG__LEVEL=info
+    volumes:
+      - /var/run/dstack.sock:/var/run/dstack.sock:ro
+      - registry-data:/data
+    ports:
+      - "8081:8081"
+    depends_on:
+      - signal-api
+    restart: unless-stopped
+
+volumes:
+  signal-config-v6:
+    driver: local
+  registry-data:
+    driver: local

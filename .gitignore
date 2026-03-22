@@ -20,3 +20,4 @@ phala.env
 
 # Git worktrees
 .worktrees/
+signal-backup.tar.gz

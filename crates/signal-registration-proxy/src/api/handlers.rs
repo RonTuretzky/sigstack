@@ -67,7 +67,7 @@ pub async fn register_number(
         .await;
 
     if let Err(ProxyError::SignalApi(ref msg)) = register_result {
-        if msg.contains("already registered") {
+        if msg.contains("already registered") || msg.contains("AlreadyVerified") {
             info!(phone_number = %number, "Account already registered, attempting to unregister and retry");
             // Try to unregister the stale registration
             if state.signal_client.unregister(&number).await.is_ok() {
