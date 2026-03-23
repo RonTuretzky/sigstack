@@ -85,8 +85,10 @@ pub struct Account {
 /// Parsed message for bot processing.
 #[derive(Debug, Clone)]
 pub struct BotMessage {
-    /// The phone number that sent the message.
+    /// The UUID of the sender.
     pub source: String,
+    /// The phone number of the sender (if available).
+    pub source_number: Option<String>,
     /// The message text.
     pub text: String,
     /// Message timestamp.
@@ -107,6 +109,7 @@ impl BotMessage {
 
         Some(Self {
             source: msg.envelope.source.clone(),
+            source_number: msg.envelope.source_number.clone(),
             text,
             timestamp: msg.envelope.timestamp,
             is_group: data.group_info.is_some(),

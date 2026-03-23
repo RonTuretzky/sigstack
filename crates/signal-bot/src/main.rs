@@ -186,6 +186,10 @@ async fn main() -> AppResult<()> {
         ))
     };
 
+    // Initialize negotiation store (TEE-protected in-memory)
+    let negotiation_store = Arc::new(NegotiationStore::new());
+    info!("Sealed negotiation store initialized (TEE-protected)");
+
     let mut handlers: Vec<Box<dyn CommandHandler>> = vec![
         chat_handler,
         Box::new(VerifyHandler::new(dstack.clone())),
@@ -193,6 +197,10 @@ async fn main() -> AppResult<()> {
         Box::new(HelpHandler::new()),
         Box::new(ModelsHandler::new(near_ai.clone())),
         Box::new(SummaryHandler::new(near_ai.clone(), conversations.clone())),
+        Box::new(NegotiateHandler::new(negotiation_store.clone())),
+        Box::new(OfferHandler::new(negotiation_store.clone())),
+        Box::new(DealsHandler::new(negotiation_store.clone())),
+        Box::new(WithdrawHandler::new(negotiation_store.clone())),
     ];
 
     // Add payment handlers if enabled

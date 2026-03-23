@@ -39,6 +39,14 @@ Just send a message to chat with AI.
 - !deposit - Get deposit addresses for USDC
 - !help - Show this message
 
+**Sealed Negotiation** (TEE-enforced private bargaining):
+- !negotiate <phone> <description> - Start a negotiation with another user
+- !offer <id> <amount> - Submit your private price (sealed in TEE)
+- !deals - View your active negotiations
+- !withdraw <id> - Cancel before both offers are in
+
+How it works: Seller sets minimum price, buyer sets maximum. If buyer max >= seller min, deal at the midpoint. If not, TEE permanently erases both offers — neither party learns the other's valuation. Based on "Conditional Recall" (Schlegel & Sun, 2025).
+
 **Verification:**
 Use `!verify my-random-text` to get cryptographic proof this bot runs in a TEE. Your challenge is embedded in the TDX quote, proving the attestation was generated fresh for you.
 
