@@ -6,6 +6,7 @@ mod clear;
 mod deposit;
 mod help;
 mod models;
+mod summary;
 mod verify;
 
 pub use balance::BalanceHandler;
@@ -14,6 +15,7 @@ pub use clear::ClearHandler;
 pub use deposit::DepositHandler;
 pub use help::HelpHandler;
 pub use models::ModelsHandler;
+pub use summary::SummaryHandler;
 pub use verify::VerifyHandler;
 
 use crate::error::AppResult;

@@ -192,6 +192,7 @@ async fn main() -> AppResult<()> {
         Box::new(ClearHandler::new(conversations.clone())),
         Box::new(HelpHandler::new()),
         Box::new(ModelsHandler::new(near_ai.clone())),
+        Box::new(SummaryHandler::new(near_ai.clone(), conversations.clone())),
     ];
 
     // Add payment handlers if enabled
@@ -233,11 +234,25 @@ async fn main() -> AppResult<()> {
     loop {
         tokio::select! {
             Some(message) = stream.next() => {
+                // Store all group messages for !summary
+                if message.is_group && !message.text.starts_with('!') {
+                    let _ = conversations.add_message(
+                        message.reply_target(), "user",
+                        &format!("{}: {}", &message.source[..message.source.len().min(8)], &message.text),
+                        None,
+                    ).await;
+                }
+
                 // Translation interceptor runs before command handlers
                 if let Some(ref ti) = translation_interceptor {
                     let was_translation_group = ti.try_translate(&message).await;
-                    if was_translation_group && !ti.also_chat {
-                        continue;
+                    if was_translation_group && !message.text.starts_with('!') {
+                        // Check if bot is mentioned — if not, skip AI reply
+                        let bot_mentioned = message.text.to_lowercase().contains("@bot")
+                            || message.text.to_lowercase().contains(&message.receiving_account);
+                        if !bot_mentioned {
+                            continue;
+                        }
                     }
                 }
 

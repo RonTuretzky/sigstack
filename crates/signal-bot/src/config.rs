@@ -37,6 +37,7 @@ pub struct Config {
     /// Payment configuration
     #[serde(default)]
     pub payments: x402_payments::PaymentConfig,
+
 }
 
 #[derive(Debug, Clone, Deserialize)]
