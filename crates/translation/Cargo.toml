@@ -1,5 +1,5 @@
 [package]
-name = "signal-client"
+name = "translation"
 version.workspace = true
 edition.workspace = true
 
@@ -10,14 +10,8 @@ serde_json.workspace = true
 thiserror.workspace = true
 tokio.workspace = true
 tracing.workspace = true
-chrono.workspace = true
-tokio-stream.workspace = true
-async-stream.workspace = true
-urlencoding = "2"
-base64 = "0.22"
-tokio-tungstenite.workspace = true
-futures-util.workspace = true
+async-trait.workspace = true
+whatlang = "0.16"
 
 [dev-dependencies]
 tokio-test.workspace = true
-wiremock.workspace = true

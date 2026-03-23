@@ -4,19 +4,18 @@
 services:
   signal-api:
     # Pinned to specific digest for TEE attestation integrity
-    image: bbernhard/signal-cli-rest-api@sha256:04ee57f9819a90c89fbee46f74e080a032f5f05decf6e4b4a4e1f45d050ed9c8
+    image: bbernhard/signal-cli-rest-api@sha256:c51c117d030d051f0cf2ef17f2cb135f1301810f9526a224be67daded8f272d6
     container_name: signal-api
     environment:
       - MODE=normal
-      # NOTE: Do NOT use AUTO_RECEIVE_SCHEDULE - it conflicts with signal-bot's polling!
-      # The signal-bot polls /v1/receive directly. AUTO_RECEIVE_SCHEDULE would consume
-      # messages before the bot can get them.
+      # NOTE: json-rpc mode fails in TEE (daemon can't bind port 6001).
+      # Using normal mode with reduced polling frequency instead.
       - LOG_LEVEL=info
     # TEMPORARY: Port exposed for debugging - remove after fixing
     ports:
       - "8080:8080"
     volumes:
-      - signal-config-v3:/home/.local/share/signal-cli
+      - signal-config-v6:/home/.local/share/signal-cli
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/v1/health"]
       interval: 30s
@@ -27,11 +26,12 @@ services:
 
   signal-bot:
     # Image hosted on Docker Hub
-    image: zaki1iqlusion/signal-bot-tee:v0.14.0
+    image: turetzkyron/signal-bot-tee:latest
     container_name: signal-bot
     environment:
       # Signal configuration - polls ALL registered accounts automatically
       - SIGNAL__SERVICE_URL=http://signal-api:8080
+      - SIGNAL__USE_WEBSOCKET=false
       # NEAR AI configuration - hardcoded for debugging
       - NEAR_AI__API_KEY=${NEAR_AI_API_KEY}
       - NEAR_AI__BASE_URL=https://cloud-api.near.ai/v1
@@ -46,6 +46,11 @@ services:
       # Tools configuration
       - TOOLS__ENABLED=${TOOLS_ENABLED:-true}
       - TOOLS__WEB_SEARCH__API_KEY=${TOOLS_WEB_SEARCH_API_KEY}
+      # Translation configuration
+      - TRANSLATION__ENABLED=true
+      - TRANSLATION__LIBRETRANSLATE_URL=http://libretranslate:5000
+      - TRANSLATION__GROUPS=RAp6dMHTmv+fazji62vXDl1K42Llvydfp1QlNxZQ70s=:en:es
+      - TRANSLATION__ALSO_CHAT=false
       # Payment/credit tracking (set to true to enable)
       - PAYMENTS__ENABLED=false
       # Dstack TEE socket - provided by Phala CVM
@@ -59,7 +64,7 @@ services:
 
   signal-registration-proxy:
     # Image hosted on Docker Hub
-    image: zaki1iqlusion/signal-registration-proxy:v0.9.0
+    image: turetzkyron/signal-registration-proxy:latest
     container_name: signal-registration-proxy
     environment:
       # Signal API (internal)
@@ -88,8 +93,22 @@ services:
       - signal-api
     restart: unless-stopped
 
+  libretranslate:
+    image: libretranslate/libretranslate:v1.6.3
+    container_name: libretranslate
+    environment:
+      - LT_LOAD_ONLY=${LT_LOAD_ONLY:-en,es}
+      - LT_DISABLE_WEB_UI=true
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/languages"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 120s
+    restart: unless-stopped
+
 volumes:
-  signal-config-v3:
+  signal-config-v6:
     driver: local
   registry-data:
     driver: local

@@ -3,17 +3,23 @@
 mod balance;
 mod chat;
 mod clear;
+mod conditional_recall;
 mod deposit;
 mod help;
 mod models;
+mod summary;
 mod verify;
 
 pub use balance::BalanceHandler;
 pub use chat::ChatHandler;
 pub use clear::ClearHandler;
+pub use conditional_recall::{
+    DealsHandler, NegotiateHandler, NegotiationStore, OfferHandler, WithdrawHandler,
+};
 pub use deposit::DepositHandler;
 pub use help::HelpHandler;
 pub use models::ModelsHandler;
+pub use summary::SummaryHandler;
 pub use verify::VerifyHandler;
 
 use crate::error::AppResult;

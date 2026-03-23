@@ -195,6 +195,21 @@ impl ConversationStore {
             .count()
     }
 
+    /// Get messages from today (UTC) for a given conversation.
+    pub async fn get_today_messages(&self, user_id: &str) -> Result<Vec<StoredMessage>, ConversationError> {
+        let today = chrono::Utc::now().date_naive();
+        Ok(self
+            .get(user_id)
+            .await?
+            .map(|conv| {
+                conv.messages
+                    .into_iter()
+                    .filter(|m| m.timestamp.date_naive() == today)
+                    .collect()
+            })
+            .unwrap_or_default())
+    }
+
     /// Health check - always returns true for in-memory store.
     pub async fn health_check(&self) -> bool {
         true

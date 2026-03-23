@@ -3,6 +3,7 @@
 use signal_bot::commands::*;
 use signal_bot::config::Config;
 use signal_bot::error::AppResult;
+use signal_bot::translation_interceptor::TranslationInterceptor;
 use anyhow::Context;
 use conversation_store::ConversationStore;
 use dstack_client::DstackClient;
@@ -185,12 +186,21 @@ async fn main() -> AppResult<()> {
         ))
     };
 
+    // Initialize negotiation store (TEE-protected in-memory)
+    let negotiation_store = Arc::new(NegotiationStore::new());
+    info!("Sealed negotiation store initialized (TEE-protected)");
+
     let mut handlers: Vec<Box<dyn CommandHandler>> = vec![
         chat_handler,
         Box::new(VerifyHandler::new(dstack.clone())),
         Box::new(ClearHandler::new(conversations.clone())),
         Box::new(HelpHandler::new()),
         Box::new(ModelsHandler::new(near_ai.clone())),
+        Box::new(SummaryHandler::new(near_ai.clone(), conversations.clone())),
+        Box::new(NegotiateHandler::new(negotiation_store.clone())),
+        Box::new(OfferHandler::new(negotiation_store.clone())),
+        Box::new(DealsHandler::new(negotiation_store.clone())),
+        Box::new(WithdrawHandler::new(negotiation_store.clone())),
     ];
 
     // Add payment handlers if enabled
@@ -200,18 +210,60 @@ async fn main() -> AppResult<()> {
         info!("Payment commands enabled: !balance, !deposit");
     }
 
+    // Initialize translation interceptor if enabled
+    let translation_interceptor = if config.translation.enabled {
+        Some(TranslationInterceptor::new(
+            &config.translation.libretranslate_url,
+            config.translation.libretranslate_api_key.clone(),
+            &config.translation.groups,
+            signal.clone(),
+            config.translation.also_chat,
+        ))
+    } else {
+        info!("Translation disabled");
+        None
+    };
+
     info!("Registered {} command handlers", handlers.len());
     info!("NEAR AI endpoint: {}", config.near_ai.base_url);
     info!("Listening for messages...");
 
     // Start message receiver
-    let receiver = MessageReceiver::new((*signal).clone(), config.signal.poll_interval);
+    let receiver = if config.signal.use_websocket {
+        info!("Using WebSocket receiver (json-rpc mode)");
+        MessageReceiver::new_websocket((*signal).clone(), &config.signal.service_url)
+    } else {
+        info!("Using HTTP polling receiver (poll_interval={:?})", config.signal.poll_interval);
+        MessageReceiver::new((*signal).clone(), config.signal.poll_interval)
+    };
     let mut stream = Box::pin(receiver.stream());
 
     // Main message loop
     loop {
         tokio::select! {
             Some(message) = stream.next() => {
+                // Store all group messages for !summary
+                if message.is_group && !message.text.starts_with('!') {
+                    let _ = conversations.add_message(
+                        message.reply_target(), "user",
+                        &format!("{}: {}", &message.source[..message.source.len().min(8)], &message.text),
+                        None,
+                    ).await;
+                }
+
+                // Translation interceptor runs before command handlers
+                if let Some(ref ti) = translation_interceptor {
+                    let was_translation_group = ti.try_translate(&message).await;
+                    if was_translation_group && !message.text.starts_with('!') {
+                        // Check if bot is mentioned — if not, skip AI reply
+                        let bot_mentioned = message.text.to_lowercase().contains("@bot")
+                            || message.text.to_lowercase().contains(&message.receiving_account);
+                        if !bot_mentioned {
+                            continue;
+                        }
+                    }
+                }
+
                 // Find matching handler
                 let handler = handlers
                     .iter()

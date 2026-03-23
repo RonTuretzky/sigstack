@@ -1,5 +1,6 @@
 //! Signal HTTP client.
 
+use base64::Engine;
 use crate::error::SignalError;
 use crate::types::*;
 use reqwest::Client;
@@ -20,7 +21,7 @@ impl SignalClient {
     /// Create a new Signal client.
     pub fn new(base_url: impl Into<String>) -> Result<Self, SignalError> {
         let client = Client::builder()
-            .timeout(Duration::from_secs(30))
+            .timeout(Duration::from_secs(120))
             .build()?;
 
         Ok(Self {
@@ -107,10 +108,13 @@ impl SignalClient {
         recipient: &str,
         message: &str,
     ) -> Result<(), SignalError> {
+        let recipient_value = Self::format_recipient(recipient);
         let request = SendMessageRequest {
             message: message.to_string(),
             number: Some(from_number.to_string()),
-            recipients: Some(vec![recipient.to_string()]),
+            recipients: Some(vec![recipient_value]),
+            quote_timestamp: None,
+            quote_author: None,
         };
 
         let response = self
@@ -127,6 +131,57 @@ impl SignalClient {
         }
 
         debug!("Sent message from {} to {}", from_number, recipient);
+        Ok(())
+    }
+
+    /// Format a recipient for the Signal CLI API.
+    /// Group IDs need "group." prefix + base64 encoding for /v2/send.
+    fn format_recipient(recipient: &str) -> String {
+        let is_group = !recipient.starts_with('+') && !recipient.contains('-');
+        if is_group {
+            if recipient.starts_with("group.") {
+                recipient.to_string()
+            } else {
+                format!("group.{}", base64::engine::general_purpose::STANDARD.encode(recipient))
+            }
+        } else {
+            recipient.to_string()
+        }
+    }
+
+    /// Send a message with a quote (reply to a specific message).
+    /// Automatically detects group vs direct message based on the recipient format.
+    #[instrument(skip(self, message, quote))]
+    pub async fn send_with_quote(
+        &self,
+        from_number: &str,
+        recipient: &str,
+        message: &str,
+        quote: Quote,
+    ) -> Result<(), SignalError> {
+        let recipient_value = Self::format_recipient(recipient);
+
+        let request = SendMessageRequest {
+            message: message.to_string(),
+            number: Some(from_number.to_string()),
+            recipients: Some(vec![recipient_value]),
+            quote_timestamp: Some(quote.id),
+            quote_author: Some(quote.author.clone()),
+        };
+
+        let response = self.client
+            .post(format!("{}/v2/send", self.base_url))
+            .json(&request)
+            .send()
+            .await?;
+
+        if !response.status().is_success() {
+            let msg = response.text().await.unwrap_or_default();
+            warn!("Send with quote failed: {}", msg);
+            return Err(SignalError::SendFailed(msg));
+        }
+
+        debug!("Sent quoted message from {} to {}", from_number, recipient);
         Ok(())
     }
 

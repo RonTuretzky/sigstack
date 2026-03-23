@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Signal Translate Bot TEE - Deployment Guide</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+    background: #0a0a0f;
+    color: #e0e0e8;
+    overflow: hidden;
+    height: 100vh;
+  }
+
+  .slide {
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    padding: 60px 80px;
+    animation: fadeIn 0.4s ease;
+    position: relative;
+  }
+
+  .slide.active { display: flex; }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .slide-counter {
+    position: fixed;
+    bottom: 24px;
+    right: 32px;
+    font-size: 14px;
+    color: #555;
+    z-index: 100;
+  }
+
+  .nav-hint {
+    position: fixed;
+    bottom: 24px;
+    left: 32px;
+    font-size: 12px;
+    color: #444;
+    z-index: 100;
+  }
+
+  .progress-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #6366f1, #a78bfa);
+    transition: width 0.4s ease;
+    z-index: 100;
+  }
+
+  h1 {
+    font-size: 48px;
+    font-weight: 700;
+    margin-bottom: 16px;
+    background: linear-gradient(135deg, #6366f1, #a78bfa, #c084fc);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    line-height: 1.2;
+  }
+
+  h2 {
+    font-size: 36px;
+    font-weight: 600;
+    margin-bottom: 24px;
+    color: #a78bfa;
+  }
+
+  .step-number {
+    font-size: 14px;
+    color: #6366f1;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    margin-bottom: 12px;
+  }
+
+  .subtitle {
+    font-size: 20px;
+    color: #888;
+    margin-bottom: 40px;
+    max-width: 700px;
+    text-align: center;
+    line-height: 1.6;
+  }
+
+  .content {
+    max-width: 900px;
+    width: 100%;
+  }
+
+  pre {
+    background: #12121a;
+    border: 1px solid #1e1e2e;
+    border-radius: 12px;
+    padding: 24px;
+    margin: 12px 0;
+    overflow-x: auto;
+    font-size: 15px;
+    line-height: 1.7;
+  }
+
+  code {
+    font-family: inherit;
+  }
+
+  .cmd { color: #c084fc; }
+  .flag { color: #6366f1; }
+  .str { color: #34d399; }
+  .comment { color: #555; }
+  .var { color: #fbbf24; }
+  .url { color: #60a5fa; }
+
+  .card {
+    background: #12121a;
+    border: 1px solid #1e1e2e;
+    border-radius: 12px;
+    padding: 24px 28px;
+    margin: 10px 0;
+    transition: border-color 0.2s;
+  }
+
+  .card:hover { border-color: #6366f1; }
+
+  .card-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #a78bfa;
+    margin-bottom: 8px;
+  }
+
+  .card-body {
+    font-size: 14px;
+    color: #999;
+    line-height: 1.6;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    width: 100%;
+  }
+
+  .arch-diagram {
+    background: #12121a;
+    border: 1px solid #1e1e2e;
+    border-radius: 12px;
+    padding: 32px;
+    font-size: 14px;
+    line-height: 1.8;
+    white-space: pre;
+    color: #888;
+    margin: 20px 0;
+  }
+
+  .arch-diagram .highlight { color: #a78bfa; }
+  .arch-diagram .green { color: #34d399; }
+  .arch-diagram .yellow { color: #fbbf24; }
+  .arch-diagram .border-char { color: #333; }
+
+  .env-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 14px;
+  }
+
+  .env-table th {
+    text-align: left;
+    padding: 10px 16px;
+    color: #6366f1;
+    border-bottom: 1px solid #1e1e2e;
+    font-weight: 600;
+  }
+
+  .env-table td {
+    padding: 10px 16px;
+    border-bottom: 1px solid #111;
+    color: #bbb;
+  }
+
+  .env-table td:first-child {
+    color: #fbbf24;
+    font-family: inherit;
+    white-space: nowrap;
+  }
+
+  .badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    margin-right: 6px;
+  }
+
+  .badge-required { background: #2d1b3d; color: #c084fc; }
+  .badge-optional { background: #1b2d1b; color: #34d399; }
+
+  .warning {
+    background: #2d2b1b;
+    border: 1px solid #44400a;
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin: 12px 0;
+    font-size: 14px;
+    color: #fbbf24;
+    line-height: 1.6;
+  }
+
+  .success {
+    background: #1b2d1b;
+    border: 1px solid #0a4420;
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin: 12px 0;
+    font-size: 14px;
+    color: #34d399;
+    line-height: 1.6;
+  }
+
+  .step-list {
+    list-style: none;
+    padding: 0;
+  }
+
+  .step-list li {
+    padding: 12px 0;
+    border-bottom: 1px solid #1a1a24;
+    font-size: 15px;
+    color: #bbb;
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+  }
+
+  .step-list li:last-child { border-bottom: none; }
+
+  .step-list .num {
+    color: #6366f1;
+    font-weight: 700;
+    font-size: 13px;
+    min-width: 24px;
+  }
+
+  .tag {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    background: #1e1e2e;
+    color: #888;
+    margin-left: 4px;
+  }
+</style>
+</head>
+<body>
+
+<div class="progress-bar" id="progress"></div>
+<div class="slide-counter" id="counter"></div>
+<div class="nav-hint">arrow keys or click to navigate</div>
+
+<!-- SLIDE 1: Title -->
+<div class="slide active" id="slide-1">
+  <h1>Signal Translate Bot</h1>
+  <div class="subtitle">
+    Deploy a privacy-preserving auto-translation bot for Signal groups,
+    running inside an Intel TDX Trusted Execution Environment.
+  </div>
+  <div style="display:flex;gap:12px;margin-top:20px;">
+    <span class="badge badge-required">TEE-Protected</span>
+    <span class="badge badge-optional">LibreTranslate</span>
+    <span class="badge badge-required">Signal CLI</span>
+    <span class="badge badge-optional">Phala Cloud</span>
+  </div>
+</div>
+
+<!-- SLIDE 2: Architecture -->
+<div class="slide" id="slide-2">
+  <div class="step-number">Overview</div>
+  <h2>Architecture</h2>
+  <div class="content">
+    <div class="arch-diagram"><span class="border-char">+------------------------------------------------------------------+</span>
+<span class="border-char">|</span>  <span class="highlight">TEE Boundary (Intel TDX)</span>                                       <span class="border-char">|</span>
+<span class="border-char">|</span>                                                                  <span class="border-char">|</span>
+<span class="border-char">|</span>   <span class="green">Signal CLI</span>          <span class="green">Signal Bot</span>         <span class="yellow">LibreTranslate</span>       <span class="border-char">|</span>
+<span class="border-char">|</span>   (decrypts E2E)  -->  (detects lang)  -->  (translates)         <span class="border-char">|</span>
+<span class="border-char">|</span>        |                    |                    |                <span class="border-char">|</span>
+<span class="border-char">|</span>        |                    v                    |                <span class="border-char">|</span>
+<span class="border-char">|</span>        |              quoted reply               |                <span class="border-char">|</span>
+<span class="border-char">|</span>        |              with flag emoji             |                <span class="border-char">|</span>
+<span class="border-char">|</span>        |                    |                    |                <span class="border-char">|</span>
+<span class="border-char">|</span>   <span class="green">All plaintext stays inside encrypted memory</span>                   <span class="border-char">|</span>
+<span class="border-char">+------------------------------------------------------------------+</span></div>
+    <div class="grid">
+      <div class="card">
+        <div class="card-title">Privacy Guarantee</div>
+        <div class="card-body">Messages are decrypted, translated, and re-encrypted entirely within TEE-protected memory. The operator never sees plaintext.</div>
+      </div>
+      <div class="card">
+        <div class="card-title">4 Containers</div>
+        <div class="card-body">signal-api, signal-bot, libretranslate, and registration-proxy all run inside the same TEE enclave.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 3: Prerequisites -->
+<div class="slide" id="slide-3">
+  <div class="step-number">Step 0</div>
+  <h2>Prerequisites</h2>
+  <div class="content">
+    <ol class="step-list">
+      <li><span class="num">01</span> Docker and Docker Compose installed</li>
+      <li><span class="num">02</span> A phone number for Signal registration <span class="tag">prepaid SIM recommended</span></li>
+      <li><span class="num">03</span> NEAR AI API key from <span style="color:#60a5fa">https://near.ai</span></li>
+      <li><span class="num">04</span> Phala Cloud account + API token from <span style="color:#60a5fa">https://cloud.phala.network</span></li>
+      <li><span class="num">05</span> DockerHub account (to push the bot image)</li>
+      <li><span class="num">06</span> Phala CLI installed</li>
+    </ol>
+    <pre><code><span class="cmd">npm</span> install <span class="flag">-g</span> phala
+<span class="cmd">phala</span> auth login <span class="var">YOUR_API_TOKEN</span></code></pre>
+    <div class="warning">The API token comes from: Phala dashboard > P logo > API Tokens > Create Token. This is NOT the same as an sk-rp-... registry key.</div>
+  </div>
+</div>
+
+<!-- SLIDE 4: Build Images -->
+<div class="slide" id="slide-4">
+  <div class="step-number">Step 1</div>
+  <h2>Build & Push Images</h2>
+  <div class="content">
+    <div class="warning">Phala CVMs run linux/amd64. If you're on an ARM Mac (M1/M2/M3/M4), you MUST cross-compile.</div>
+    <pre><code><span class="comment"># Build signal-bot for linux/amd64</span>
+<span class="cmd">docker</span> buildx build <span class="flag">--platform</span> linux/amd64 \
+  <span class="flag">-t</span> <span class="var">YOUR_DOCKERHUB</span>/signal-bot-tee:latest \
+  <span class="flag">-f</span> docker/Dockerfile <span class="flag">--push</span> .
+
+<span class="comment"># Build registration proxy for linux/amd64</span>
+<span class="cmd">docker</span> buildx build <span class="flag">--platform</span> linux/amd64 \
+  <span class="flag">-t</span> <span class="var">YOUR_DOCKERHUB</span>/signal-registration-proxy:latest \
+  <span class="flag">-f</span> docker/Dockerfile.proxy <span class="flag">--push</span> .</code></pre>
+    <div class="card">
+      <div class="card-title">Other images are pulled from public registries</div>
+      <div class="card-body">
+        <code>bbernhard/signal-cli-rest-api</code> (pinned by SHA256 digest)<br>
+        <code>libretranslate/libretranslate:v1.6.3</code>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 5: Update Compose -->
+<div class="slide" id="slide-5">
+  <div class="step-number">Step 2</div>
+  <h2>Configure phala-compose.yaml</h2>
+  <div class="content">
+    <p style="color:#999;margin-bottom:16px;font-size:15px;">Update the image references to point to your DockerHub:</p>
+    <pre><code><span class="comment"># docker/phala-compose.yaml</span>
+
+signal-bot:
+  image: <span class="var">YOUR_DOCKERHUB</span>/signal-bot-tee:latest
+  environment:
+    <span class="comment"># Translation settings</span>
+    - TRANSLATION__ENABLED=<span class="str">true</span>
+    - TRANSLATION__LIBRETRANSLATE_URL=<span class="str">http://libretranslate:5000</span>
+    - TRANSLATION__GROUPS=<span class="var">${TRANSLATION_GROUPS}</span>
+    - TRANSLATION__ALSO_CHAT=<span class="str">false</span>
+
+libretranslate:
+  image: libretranslate/libretranslate:<span class="str">v1.6.3</span>
+  environment:
+    - LT_LOAD_ONLY=<span class="var">${LT_LOAD_ONLY:-en,es}</span></code></pre>
+    <div class="success">LibreTranslate runs inside the TEE boundary with no external ports. Plaintext translations never leave encrypted memory.</div>
+  </div>
+</div>
+
+<!-- SLIDE 6: Deploy to Phala -->
+<div class="slide" id="slide-6">
+  <div class="step-number">Step 3</div>
+  <h2>Deploy to Phala Cloud</h2>
+  <div class="content">
+    <pre><code><span class="cmd">cd</span> docker
+
+<span class="cmd">phala</span> cvms create \
+  <span class="flag">--name</span> signal-translate-bot \
+  <span class="flag">--compose</span> ./phala-compose.yaml \
+  <span class="flag">--vcpu</span> <span class="str">2</span> \
+  <span class="flag">--memory</span> <span class="str">4096</span> \
+  <span class="flag">--disk-size</span> <span class="str">20</span></code></pre>
+    <p style="color:#999;margin:16px 0;font-size:14px;">When prompted, enter your encrypted secrets:</p>
+    <table class="env-table">
+      <tr><th>Variable</th><th>Value</th></tr>
+      <tr><td>NEAR_AI_API_KEY</td><td>Your NEAR AI API key</td></tr>
+      <tr><td>TRANSLATION__ENABLED</td><td><code>true</code></td></tr>
+      <tr><td>TRANSLATION__GROUPS</td><td><code>GROUP_ID:en:es</code> <span class="tag">set after registration</span></td></tr>
+      <tr><td>LT_LOAD_ONLY</td><td><code>en,es</code> (or your language pair)</td></tr>
+    </table>
+    <div class="card">
+      <div class="card-title">Upgrading an existing CVM?</div>
+      <div class="card-body"><code style="color:#c084fc">phala deploy --uuid YOUR_CVM_UUID --compose ./phala-compose.yaml</code></div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 7: Register Signal Number -->
+<div class="slide" id="slide-7">
+  <div class="step-number">Step 4</div>
+  <h2>Register Signal Phone Number</h2>
+  <div class="content">
+    <p style="color:#999;margin-bottom:16px;font-size:14px;">Get your CVM endpoint first:</p>
+    <pre><code><span class="cmd">phala</span> cvms get <span class="var">APP_ID</span>
+<span class="comment"># endpoint example: https://[app-id]-8080.dstack-prod5.phala.network</span>
+<span class="comment"># use [endpoint] below as shorthand for the full URL above</span></code></pre>
+    <p style="color:#999;margin:16px 0;font-size:14px;">Get a captcha from <span style="color:#60a5fa">signalcaptchas.org/registration/generate.html</span>, then:</p>
+    <pre><code><span class="comment"># Request verification code</span>
+<span class="cmd">curl</span> <span class="flag">-X POST</span> <span class="url">https://[app-id]-8080.dstack-prod5.phala.network/v1/register/+1YOURNUMBER</span> \
+  <span class="flag">-H</span> <span class="str">"Content-Type: application/json"</span> \
+  <span class="flag">-d</span> <span class="str">'{"captcha": "signalcaptcha://..."}'</span>
+
+<span class="comment"># Enter the SMS code</span>
+<span class="cmd">curl</span> <span class="flag">-X POST</span> <span class="url">https://[app-id]-8080.dstack-prod5.phala.network/v1/register/+1YOURNUMBER/verify/CODE</span>
+
+<span class="comment"># Set profile name</span>
+<span class="cmd">curl</span> <span class="flag">-X PUT</span> <span class="url">https://[app-id]-8080.dstack-prod5.phala.network/v1/profiles/+1YOURNUMBER</span> \
+  <span class="flag">-H</span> <span class="str">"Content-Type: application/json"</span> \
+  <span class="flag">-d</span> <span class="str">'{"name": "Translate Bot"}'</span></code></pre>
+  </div>
+</div>
+
+<!-- SLIDE 8: Get Group ID -->
+<div class="slide" id="slide-8">
+  <div class="step-number">Step 5</div>
+  <h2>Get Your Group ID</h2>
+  <div class="content">
+    <p style="color:#999;margin-bottom:16px;font-size:15px;">Add the bot's phone number to your Signal group, then find the group ID:</p>
+    <pre><code><span class="comment"># Option A: List groups via Signal CLI API</span>
+<span class="cmd">curl</span> <span class="url">https://[app-id]-8080.dstack-prod5.phala.network/v1/groups/+1BOTNUMBER</span>
+
+<span class="comment"># Option B: Send a message in the group, then check logs</span>
+<span class="cmd">phala</span> cvms logs <span class="var">APP_ID</span>
+<span class="comment"># Look for: group_id = "abc123..."</span></code></pre>
+    <p style="color:#999;margin:20px 0;font-size:14px;">Then update the TRANSLATION_GROUPS secret:</p>
+    <pre><code><span class="comment"># Format: GROUP_ID:LANG_A:LANG_B</span>
+<span class="comment"># Multiple groups: GROUP1:en:es,GROUP2:en:fr</span>
+
+<span class="var">TRANSLATION_GROUPS</span>=<span class="str">"dGhpcyBpcyBhIGdyb3VwIGlk:en:es"</span></code></pre>
+    <div class="card">
+      <div class="card-title">Redeploy with the group ID</div>
+      <div class="card-body"><code style="color:#c084fc">phala deploy --uuid APP_ID --compose ./phala-compose.yaml</code><br><br>Set TRANSLATION_GROUPS in the encrypted secrets when prompted.</div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 9: Language Pairs -->
+<div class="slide" id="slide-9">
+  <div class="step-number">Step 6</div>
+  <h2>Choose Language Pairs</h2>
+  <div class="content">
+    <p style="color:#999;margin-bottom:16px;font-size:15px;">Set <code style="color:#fbbf24">LT_LOAD_ONLY</code> to download only the models you need (saves RAM and startup time):</p>
+    <div class="grid">
+      <div class="card">
+        <div class="card-title">Common Pairs</div>
+        <div class="card-body">
+          <code>en,es</code> - English / Spanish<br>
+          <code>en,fr</code> - English / French<br>
+          <code>en,de</code> - English / German<br>
+          <code>en,pt</code> - English / Portuguese<br>
+          <code>en,zh</code> - English / Chinese<br>
+          <code>en,ar</code> - English / Arabic<br>
+          <code>en,ja</code> - English / Japanese<br>
+          <code>en,ko</code> - English / Korean<br>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Multi-Group Example</div>
+        <div class="card-body" style="font-size:13px;line-height:2;">
+          <code style="color:#fbbf24">TRANSLATION_GROUPS=</code><br>
+          <code style="color:#34d399">group1:en:es,</code><br>
+          <code style="color:#34d399">group2:en:fr,</code><br>
+          <code style="color:#34d399">group3:es:pt</code><br><br>
+          <code style="color:#fbbf24">LT_LOAD_ONLY=</code><code style="color:#34d399">en,es,fr,pt</code>
+        </div>
+      </div>
+    </div>
+    <div class="warning">Each language model is ~50-100MB. Loading all languages needs ~2GB+ RAM. Use LT_LOAD_ONLY to keep memory low.</div>
+  </div>
+</div>
+
+<!-- SLIDE 10: Verify -->
+<div class="slide" id="slide-10">
+  <div class="step-number">Step 7</div>
+  <h2>Verify & Test</h2>
+  <div class="content">
+    <ol class="step-list">
+      <li><span class="num">01</span> Send an English message in the configured group</li>
+      <li><span class="num">02</span> Bot replies with a quoted Spanish translation + flag emoji</li>
+      <li><span class="num">03</span> Send a Spanish message - bot replies with English translation</li>
+      <li><span class="num">04</span> Send <code style="color:#c084fc">!verify test123</code> to get TEE attestation proof</li>
+      <li><span class="num">05</span> Commands like <code style="color:#c084fc">!help</code> still work in translation groups</li>
+    </ol>
+    <div style="margin-top:24px;">
+      <div class="arch-diagram" style="font-size:15px;line-height:2.2;text-align:center;">
+  You:    <span class="green">"Hello, how is everyone doing today?"</span>
+
+  Bot:    <span class="yellow">replying to your message</span>
+          <span class="highlight">&#x1f1ea;&#x1f1f8; Hola, como estan todos hoy?</span></div>
+    </div>
+    <div class="success">If also_chat is false (default), the bot ONLY translates in configured groups. No AI chat responses. Set TRANSLATION__ALSO_CHAT=true to enable both.</div>
+  </div>
+</div>
+
+<!-- SLIDE 11: TEE Verification -->
+<div class="slide" id="slide-11">
+  <div class="step-number">Step 8</div>
+  <h2>Verify TEE Attestation</h2>
+  <div class="content">
+    <p style="color:#999;margin-bottom:16px;font-size:15px;">Prove that LibreTranslate + Signal CLI + Bot are all inside the TEE:</p>
+    <ol class="step-list">
+      <li><span class="num">01</span> Send <code style="color:#c084fc">!verify my-nonce-123</code> to the bot</li>
+      <li><span class="num">02</span> Bot returns App ID, compose hash, and TDX quote</li>
+      <li><span class="num">03</span> Visit <span style="color:#60a5fa">https://proof.t16z.com</span> and enter the App ID</li>
+      <li><span class="num">04</span> Confirm compose hash matches your phala-compose.yaml</li>
+      <li><span class="num">05</span> The compose hash covers ALL containers - including LibreTranslate</li>
+    </ol>
+    <div class="grid" style="margin-top:20px;">
+      <div class="card">
+        <div class="card-title">What's Proven</div>
+        <div class="card-body">
+          Code runs in Intel TDX<br>
+          Exact docker-compose.yaml<br>
+          LibreTranslate version<br>
+          Memory is encrypted
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">What's NOT Proven</div>
+        <div class="card-body">
+          Network metadata (timing, sizes)<br>
+          LibreTranslate model accuracy<br>
+          That NEAR AI is in a TEE<br>
+          (verify separately at near.ai)
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SLIDE 12: Troubleshooting -->
+<div class="slide" id="slide-12">
+  <div class="step-number">Reference</div>
+  <h2>Troubleshooting</h2>
+  <div class="content">
+    <table class="env-table">
+      <tr><th>Issue</th><th>Solution</th></tr>
+      <tr><td style="color:#ef4444">No translation</td><td>Check TRANSLATION__ENABLED=true and group ID is correct</td></tr>
+      <tr><td style="color:#ef4444">LibreTranslate slow start</td><td>First boot downloads models (~2 min). Check LT_LOAD_ONLY.</td></tr>
+      <tr><td style="color:#ef4444">Signal reg fails</td><td>Captcha expires fast. Get a fresh one immediately before POST.</td></tr>
+      <tr><td style="color:#ef4444">Bot translates itself</td><td>Should not happen (self-message filter). Check logs for source == receiving_account.</td></tr>
+      <tr><td style="color:#ef4444">Short msgs ignored</td><td>Messages under 3 chars are skipped. This is by design.</td></tr>
+      <tr><td style="color:#ef4444">Wrong language detected</td><td>Very short or mixed-language text has low confidence. Minimum threshold is 0.3.</td></tr>
+      <tr><td style="color:#ef4444">OOM / high memory</td><td>Set LT_LOAD_ONLY to only your needed languages. Consider --memory 8192.</td></tr>
+    </table>
+    <pre><code><span class="comment"># Check logs</span>
+<span class="cmd">phala</span> cvms logs <span class="var">APP_ID</span>
+
+<span class="comment"># Test LibreTranslate directly</span>
+<span class="cmd">curl</span> <span class="flag">-X POST</span> <span class="url">http://localhost:5000/translate</span> \
+  <span class="flag">-H</span> <span class="str">"Content-Type: application/json"</span> \
+  <span class="flag">-d</span> <span class="str">'{"q":"Hello","source":"en","target":"es"}'</span></code></pre>
+  </div>
+</div>
+
+<!-- SLIDE 13: Config Reference -->
+<div class="slide" id="slide-13">
+  <div class="step-number">Reference</div>
+  <h2>Environment Variables</h2>
+  <div class="content">
+    <table class="env-table">
+      <tr><th>Variable</th><th>Default</th><th>Description</th></tr>
+      <tr><td>TRANSLATION__ENABLED</td><td>false</td><td><span class="badge badge-required">Required</span> Master switch</td></tr>
+      <tr><td>TRANSLATION__LIBRETRANSLATE_URL</td><td>http://localhost:5000</td><td>Set to http://libretranslate:5000 in compose</td></tr>
+      <tr><td>TRANSLATION__LIBRETRANSLATE_API_KEY</td><td>none</td><td><span class="badge badge-optional">Optional</span> If your instance needs auth</td></tr>
+      <tr><td>TRANSLATION__GROUPS</td><td>empty</td><td><span class="badge badge-required">Required</span> group_id:lang_a:lang_b,...</td></tr>
+      <tr><td>TRANSLATION__ALSO_CHAT</td><td>false</td><td>Also run AI chat in translation groups</td></tr>
+      <tr><td>LT_LOAD_ONLY</td><td>en,es</td><td>Language models to download</td></tr>
+      <tr><td>LT_DISABLE_WEB_UI</td><td>true</td><td>No need for web UI inside TEE</td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- SLIDE 14: End -->
+<div class="slide" id="slide-14">
+  <h1>Ready to Deploy</h1>
+  <div class="subtitle">
+    Your Signal group members can now chat in their native language.<br>
+    Every translation happens inside TEE-encrypted memory.
+  </div>
+  <div style="margin-top:32px;color:#555;font-size:14px;">
+    <a href="https://github.com/zmanian/signal-bot-tee" style="color:#6366f1;text-decoration:none;">github.com/zmanian/signal-bot-tee</a>
+  </div>
+</div>
+
+<script>
+  const slides = document.querySelectorAll('.slide');
+  const counter = document.getElementById('counter');
+  const progress = document.getElementById('progress');
+  let current = 0;
+
+  function showSlide(n) {
+    slides[current].classList.remove('active');
+    current = Math.max(0, Math.min(n, slides.length - 1));
+    slides[current].classList.add('active');
+    counter.textContent = `${current + 1} / ${slides.length}`;
+    progress.style.width = `${((current + 1) / slides.length) * 100}%`;
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); showSlide(current + 1); }
+    if (e.key === 'ArrowLeft') { e.preventDefault(); showSlide(current - 1); }
+    if (e.key === 'Home') { e.preventDefault(); showSlide(0); }
+    if (e.key === 'End') { e.preventDefault(); showSlide(slides.length - 1); }
+  });
+
+  document.addEventListener('click', (e) => {
+    if (e.clientX > window.innerWidth / 2) showSlide(current + 1);
+    else showSlide(current - 1);
+  });
+
+  showSlide(0);
+</script>
+</body>
+</html>
