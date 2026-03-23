@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SigStack — Hackathon Submission</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&family=JetBrains+Mono:wght@400;600&display=swap');
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0a0a0f;
+      --surface: #13131a;
+      --border: #1e1e2e;
+      --text: #e4e4ef;
+      --muted: #8888a0;
+      --accent: #3b82f6;
+      --accent2: #8b5cf6;
+      --green: #22c55e;
+      --signal-blue: #3a76f0;
+    }
+
+    html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; }
+
+    .deck {
+      height: 100vh;
+      width: 100vw;
+      position: relative;
+    }
+
+    .slide {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 4rem 6rem;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.5s ease, transform 0.5s ease;
+      transform: translateX(40px);
+    }
+
+    .slide.active {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateX(0);
+    }
+
+    h1 {
+      font-size: 4rem;
+      font-weight: 900;
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+      margin-bottom: 1.5rem;
+    }
+
+    h2 {
+      font-size: 2.5rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 1rem;
+    }
+
+    h3 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin-bottom: 0.75rem;
+    }
+
+    p, li {
+      font-size: 1.25rem;
+      line-height: 1.7;
+      color: var(--muted);
+    }
+
+    a {
+      color: var(--accent);
+      text-decoration: none;
+      border-bottom: 1px solid transparent;
+      transition: border-color 0.2s;
+    }
+
+    a:hover { border-bottom-color: var(--accent); }
+
+    .gradient-text {
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .tag {
+      display: inline-block;
+      padding: 0.25rem 0.75rem;
+      border-radius: 999px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 1.5rem;
+    }
+
+    .tag-blue { background: rgba(59,130,246,0.15); color: var(--accent); }
+    .tag-purple { background: rgba(139,92,246,0.15); color: var(--accent2); }
+    .tag-green { background: rgba(34,197,94,0.15); color: var(--green); }
+
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.5rem;
+      width: 100%;
+      max-width: 1100px;
+      margin-top: 2rem;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2rem;
+      text-align: left;
+      transition: border-color 0.3s, transform 0.3s;
+    }
+
+    .card:hover {
+      border-color: var(--accent);
+      transform: translateY(-4px);
+    }
+
+    .card .icon {
+      font-size: 2.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .card h3 { color: var(--text); }
+    .card p { font-size: 1rem; }
+
+    .big-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-top: 2rem;
+      padding: 1rem 2rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      font-size: 1.1rem;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--text);
+      transition: border-color 0.3s, transform 0.3s;
+      text-decoration: none;
+    }
+
+    .big-link:hover {
+      border-color: var(--accent);
+      transform: translateY(-2px);
+    }
+
+    .video-container {
+      width: 100%;
+      max-width: 800px;
+      aspect-ratio: 16 / 9;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 2rem;
+      overflow: hidden;
+    }
+
+    .video-container iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      border-radius: 16px;
+    }
+
+    .video-placeholder {
+      text-align: center;
+      color: var(--muted);
+    }
+
+    .video-placeholder .play-icon {
+      font-size: 4rem;
+      margin-bottom: 1rem;
+    }
+
+    /* Navigation */
+    .nav {
+      position: fixed;
+      bottom: 2rem;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      z-index: 100;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 0.5rem 1.25rem;
+    }
+
+    .nav button {
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-size: 1.25rem;
+      cursor: pointer;
+      padding: 0.25rem 0.5rem;
+      border-radius: 8px;
+      transition: color 0.2s, background 0.2s;
+    }
+
+    .nav button:hover { color: var(--text); background: rgba(255,255,255,0.05); }
+
+    .dots {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--border);
+      transition: background 0.3s, transform 0.3s;
+      cursor: pointer;
+    }
+
+    .dot.active {
+      background: var(--accent);
+      transform: scale(1.3);
+    }
+
+    .subtitle {
+      font-size: 1.35rem;
+      color: var(--muted);
+      max-width: 700px;
+      text-align: center;
+    }
+
+    .signal-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-top: 2rem;
+      padding: 1.25rem 2.5rem;
+      background: var(--signal-blue);
+      border: none;
+      border-radius: 14px;
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: #fff;
+      text-decoration: none;
+      transition: transform 0.3s, box-shadow 0.3s;
+      cursor: pointer;
+    }
+
+    .signal-btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 30px rgba(58,118,240,0.3);
+      border-bottom-color: transparent;
+    }
+
+    .arch-diagram {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.95rem;
+      color: var(--green);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem 2rem;
+      margin-top: 1.5rem;
+      white-space: pre;
+      line-height: 1.6;
+      text-align: left;
+    }
+
+    .team-row {
+      display: flex;
+      gap: 2rem;
+      margin-top: 2rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .team-member {
+      text-align: center;
+    }
+
+    .team-member .name {
+      font-weight: 600;
+      font-size: 1.1rem;
+      color: var(--text);
+    }
+
+    .team-member .role {
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+
+    @media (max-width: 900px) {
+      .card-grid { grid-template-columns: 1fr; }
+      h1 { font-size: 2.5rem; }
+      h2 { font-size: 1.75rem; }
+      .slide { padding: 2rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="deck">
+
+    <!-- Slide 1: Title -->
+    <div class="slide active" data-slide="0">
+      <span class="tag tag-blue">Hackathon Submission</span>
+      <h1><span class="gradient-text">SigStack</span></h1>
+      <p class="subtitle">
+        A private AI assistant on Signal, running in a Trusted Execution Environment.
+        Your messages never leave encrypted memory.
+      </p>
+      <div class="arch-diagram">User ─→ Signal E2E ─→ [ TEE: Signal CLI ─→ Bot ─→ NEAR AI (GPU TEE) ]
+                          └──────── all in encrypted memory ────────┘</div>
+    </div>
+
+    <!-- Slide 2: Product Features -->
+    <div class="slide" data-slide="1">
+      <span class="tag tag-purple">Product</span>
+      <h2>What SigStack Can Do</h2>
+      <div class="card-grid">
+        <div class="card">
+          <div class="icon">🧠</div>
+          <h3>Conditional Recall</h3>
+          <p>Context-aware memory that recalls past conversations only when relevant — privacy-first, ephemeral by default, with TEE-protected in-memory storage.</p>
+        </div>
+        <div class="card">
+          <div class="icon">🌐</div>
+          <h3>Translate</h3>
+          <p>Real-time translation powered by NEAR AI inference running inside a GPU TEE. Translate messages across languages without exposing plaintext to any operator.</p>
+        </div>
+        <div class="card">
+          <div class="icon">🤖</div>
+          <h3>AI Assistant</h3>
+          <p>Full-featured AI chat with tool use — web search, calculator, weather — all running inside Intel TDX. Cryptographically verifiable with <code>!verify</code>.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Slide 3: Demo Video -->
+    <div class="slide" data-slide="2">
+      <span class="tag tag-green">Demo</span>
+      <h2>See It In Action</h2>
+      <div class="video-container">
+        <!-- Replace the src below with your actual demo video embed URL -->
+        <div class="video-placeholder">
+          <div class="play-icon">▶</div>
+          <p>Demo Video</p>
+          <p style="font-size: 0.9rem; margin-top: 0.5rem;">
+            <a href="https://youtu.be/YOUR_VIDEO_ID" target="_blank">Watch on YouTube →</a>
+          </p>
+        </div>
+      </div>
+      <p style="margin-top: 1.5rem; text-align: center;">
+        End-to-end walkthrough: registration, verification, AI chat, and tool use.
+      </p>
+    </div>
+
+    <!-- Slide 4: GitHub Repository -->
+    <div class="slide" data-slide="3">
+      <span class="tag tag-blue">Source Code</span>
+      <h2>Open Source on GitHub</h2>
+      <p style="max-width: 600px; text-align: center;">
+        Full source code — Rust crates for the bot, registration proxy, TEE attestation, payments, and a React frontend for verification.
+      </p>
+      <a class="big-link" href="https://github.com/RonTuretzky/signal-bot-tee" target="_blank">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+        RonTuretzky/signal-bot-tee
+      </a>
+      <div class="arch-diagram" style="margin-top: 2rem; font-size: 0.85rem;">crates/
+  signal-bot/              # Main application
+  near-ai-client/          # NEAR AI Cloud client
+  conversation-store/      # In-memory HashMap + TTL
+  dstack-client/           # TEE attestation
+  signal-client/           # Signal CLI REST API
+  signal-registration-proxy/ # Multi-tenant registration
+  tools/                   # Calculator, weather, web search
+  x402-payments/           # Credit/payment tracking
+web/                       # React + Vite frontend</div>
+    </div>
+
+    <!-- Slide 5: Signal Group -->
+    <div class="slide" data-slide="4">
+      <span class="tag tag-green">Community</span>
+      <h2>Join the Signal Group</h2>
+      <p class="subtitle">
+        Connect with the team and other users. Ask questions, report bugs, or just say hi.
+      </p>
+      <!-- Replace href with your actual Signal group link -->
+      <a class="signal-btn" href="https://signal.group/#YOUR_GROUP_LINK" target="_blank">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+        Join on Signal
+      </a>
+      <p style="margin-top: 2rem; font-size: 1rem; color: var(--muted);">
+        Or message the bot directly to try it out.
+      </p>
+    </div>
+
+    <!-- Slide 6: Thank You -->
+    <div class="slide" data-slide="5">
+      <h1><span class="gradient-text">Thank You</span></h1>
+      <p class="subtitle">
+        Private AI conversations, verified by hardware.
+      </p>
+      <div style="display: flex; gap: 1.5rem; margin-top: 2rem; flex-wrap: wrap; justify-content: center;">
+        <a class="big-link" href="https://github.com/RonTuretzky/signal-bot-tee" target="_blank">GitHub</a>
+        <a class="big-link" href="https://signal.group/#YOUR_GROUP_LINK" target="_blank">Signal Group</a>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Navigation -->
+  <div class="nav">
+    <button id="prev" aria-label="Previous slide">←</button>
+    <div class="dots" id="dots"></div>
+    <button id="next" aria-label="Next slide">→</button>
+  </div>
+
+  <script>
+    const slides = document.querySelectorAll('.slide');
+    const dotsContainer = document.getElementById('dots');
+    let current = 0;
+
+    // Create dots
+    slides.forEach((_, i) => {
+      const dot = document.createElement('div');
+      dot.className = 'dot' + (i === 0 ? ' active' : '');
+      dot.addEventListener('click', () => goTo(i));
+      dotsContainer.appendChild(dot);
+    });
+
+    function goTo(n) {
+      slides[current].classList.remove('active');
+      dotsContainer.children[current].classList.remove('active');
+      current = (n + slides.length) % slides.length;
+      slides[current].classList.add('active');
+      dotsContainer.children[current].classList.add('active');
+    }
+
+    document.getElementById('prev').addEventListener('click', () => goTo(current - 1));
+    document.getElementById('next').addEventListener('click', () => goTo(current + 1));
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); goTo(current + 1); }
+      if (e.key === 'ArrowLeft') { e.preventDefault(); goTo(current - 1); }
+    });
+  </script>
+</body>
+</html>
