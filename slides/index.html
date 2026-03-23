@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SigStack — Hackathon Submission</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;900&family=JetBrains+Mono:wght@400;600&display=swap');
 
@@ -106,6 +107,7 @@
     .tag-blue { background: rgba(59,130,246,0.15); color: var(--accent); }
     .tag-purple { background: rgba(139,92,246,0.15); color: var(--accent2); }
     .tag-green { background: rgba(34,197,94,0.15); color: var(--green); }
+    .tag-orange { background: rgba(249,115,22,0.15); color: #f97316; }
 
     .card-grid {
       display: grid;
@@ -162,32 +164,17 @@
     .video-container {
       width: 100%;
       max-width: 800px;
-      aspect-ratio: 16 / 9;
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: 16px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
       margin-top: 2rem;
       overflow: hidden;
     }
 
-    .video-container iframe {
+    .video-container video {
       width: 100%;
-      height: 100%;
-      border: none;
+      display: block;
       border-radius: 16px;
-    }
-
-    .video-placeholder {
-      text-align: center;
-      color: var(--muted);
-    }
-
-    .video-placeholder .play-icon {
-      font-size: 4rem;
-      margin-bottom: 1rem;
     }
 
     /* Navigation */
@@ -282,31 +269,53 @@
       text-align: left;
     }
 
-    .team-row {
-      display: flex;
+    /* Negotiation slide */
+    .nego-layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
       gap: 2rem;
+      width: 100%;
+      max-width: 1100px;
       margin-top: 2rem;
-      flex-wrap: wrap;
+      align-items: start;
+    }
+
+    .nego-screenshots {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .nego-screenshots img {
+      width: 100%;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+    }
+
+    .nego-screenshots .caption {
+      font-size: 0.85rem;
+      color: var(--muted);
+      text-align: center;
+      margin-top: -0.5rem;
+    }
+
+    .mermaid-container {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1.5rem;
+      display: flex;
+      align-items: center;
       justify-content: center;
     }
 
-    .team-member {
-      text-align: center;
-    }
-
-    .team-member .name {
-      font-weight: 600;
-      font-size: 1.1rem;
-      color: var(--text);
-    }
-
-    .team-member .role {
-      font-size: 0.9rem;
-      color: var(--muted);
+    .mermaid {
+      font-size: 14px;
     }
 
     @media (max-width: 900px) {
       .card-grid { grid-template-columns: 1fr; }
+      .nego-layout { grid-template-columns: 1fr; }
       h1 { font-size: 2.5rem; }
       h2 { font-size: 1.75rem; }
       .slide { padding: 2rem; }
@@ -324,8 +333,8 @@
         A private AI assistant on Signal, running in a Trusted Execution Environment.
         Your messages never leave encrypted memory.
       </p>
-      <div class="arch-diagram">User ─→ Signal E2E ─→ [ TEE: Signal CLI ─→ Bot ─→ NEAR AI (GPU TEE) ]
-                          └──────── all in encrypted memory ────────┘</div>
+      <div class="arch-diagram">User ──→ Signal E2E ──→ [ TEE: Signal CLI ──→ Bot ──→ NEAR AI (GPU TEE) ]
+                           └───────── all in encrypted memory ─────────┘</div>
     </div>
 
     <!-- Slide 2: Product Features -->
@@ -351,35 +360,68 @@
       </div>
     </div>
 
-    <!-- Slide 3: Demo Video -->
+    <!-- Slide 3: Negotiation Feature -->
     <div class="slide" data-slide="2">
+      <span class="tag tag-orange">Feature</span>
+      <h2>Sealed-Bid Negotiation</h2>
+      <div class="nego-layout">
+        <div class="nego-screenshots">
+          <img src="assets/negotiation-start.png" alt="Starting a negotiation">
+          <p class="caption">Seller starts negotiation with <code>!negotiate</code></p>
+          <img src="assets/offer.png" alt="Submitting an offer">
+          <p class="caption">Offers sealed in TEE memory — only the TEE can see them</p>
+        </div>
+        <div class="mermaid-container">
+          <pre class="mermaid">
+flowchart TD
+    A["!negotiate +buyer item"] --> B[Negotiation Created]
+    B --> C["Seller: !offer ID min_price"]
+    B --> D["Buyer: !offer ID max_price"]
+    C --> E{Both offers in?}
+    D --> E
+    E -- No --> F[Wait for other party]
+    F --> E
+    E -- Yes --> G{buyer_max >= seller_min?}
+    G -- Yes --> H["Deal at midpoint price"]
+    G -- No --> I["No deal — TEE erases both"]
+    B --> J["Either party: !withdraw ID"]
+    J --> K[Negotiation cancelled]
+
+    style A fill:#3b82f6,color:#fff,stroke:none
+    style H fill:#22c55e,color:#fff,stroke:none
+    style I fill:#ef4444,color:#fff,stroke:none
+    style K fill:#6b7280,color:#fff,stroke:none
+          </pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- Slide 4: Demo Video -->
+    <div class="slide" data-slide="3">
       <span class="tag tag-green">Demo</span>
       <h2>See It In Action</h2>
       <div class="video-container">
-        <!-- Replace the src below with your actual demo video embed URL -->
-        <div class="video-placeholder">
-          <div class="play-icon">▶</div>
-          <p>Demo Video</p>
-          <p style="font-size: 0.9rem; margin-top: 0.5rem;">
-            <a href="https://youtu.be/YOUR_VIDEO_ID" target="_blank">Watch on YouTube →</a>
-          </p>
-        </div>
+        <video controls preload="metadata">
+          <source src="assets/demo.mov" type="video/quicktime">
+          <source src="assets/demo.mov" type="video/mp4">
+          Your browser does not support the video tag.
+        </video>
       </div>
       <p style="margin-top: 1.5rem; text-align: center;">
-        End-to-end walkthrough: registration, verification, AI chat, and tool use.
+        AI assistant and translation demo — running inside a TEE on Phala Cloud.
       </p>
     </div>
 
-    <!-- Slide 4: GitHub Repository -->
-    <div class="slide" data-slide="3">
+    <!-- Slide 5: GitHub Repository -->
+    <div class="slide" data-slide="4">
       <span class="tag tag-blue">Source Code</span>
       <h2>Open Source on GitHub</h2>
       <p style="max-width: 600px; text-align: center;">
         Full source code — Rust crates for the bot, registration proxy, TEE attestation, payments, and a React frontend for verification.
       </p>
-      <a class="big-link" href="https://github.com/RonTuretzky/signal-bot-tee" target="_blank">
+      <a class="big-link" href="https://github.com/RonTuretzky/sigstack" target="_blank">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
-        RonTuretzky/signal-bot-tee
+        RonTuretzky/sigstack
       </a>
       <div class="arch-diagram" style="margin-top: 2rem; font-size: 0.85rem;">crates/
   signal-bot/              # Main application
@@ -393,8 +435,8 @@
 web/                       # React + Vite frontend</div>
     </div>
 
-    <!-- Slide 5: Signal Group -->
-    <div class="slide" data-slide="4">
+    <!-- Slide 6: Signal Group -->
+    <div class="slide" data-slide="5">
       <span class="tag tag-green">Community</span>
       <h2>Join the Signal Group</h2>
       <p class="subtitle">
@@ -410,14 +452,14 @@ web/                       # React + Vite frontend</div>
       </p>
     </div>
 
-    <!-- Slide 6: Thank You -->
-    <div class="slide" data-slide="5">
+    <!-- Slide 7: Thank You -->
+    <div class="slide" data-slide="6">
       <h1><span class="gradient-text">Thank You</span></h1>
       <p class="subtitle">
         Private AI conversations, verified by hardware.
       </p>
       <div style="display: flex; gap: 1.5rem; margin-top: 2rem; flex-wrap: wrap; justify-content: center;">
-        <a class="big-link" href="https://github.com/RonTuretzky/signal-bot-tee" target="_blank">GitHub</a>
+        <a class="big-link" href="https://github.com/RonTuretzky/sigstack" target="_blank">GitHub</a>
         <a class="big-link" href="https://signal.group/#YOUR_GROUP_LINK" target="_blank">Signal Group</a>
       </div>
     </div>
@@ -426,12 +468,27 @@ web/                       # React + Vite frontend</div>
 
   <!-- Navigation -->
   <div class="nav">
-    <button id="prev" aria-label="Previous slide">←</button>
+    <button id="prev" aria-label="Previous slide">&#8592;</button>
     <div class="dots" id="dots"></div>
-    <button id="next" aria-label="Next slide">→</button>
+    <button id="next" aria-label="Next slide">&#8594;</button>
   </div>
 
   <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: 'dark',
+      themeVariables: {
+        primaryColor: '#3b82f6',
+        primaryTextColor: '#e4e4ef',
+        primaryBorderColor: '#1e1e2e',
+        lineColor: '#8888a0',
+        secondaryColor: '#13131a',
+        tertiaryColor: '#1e1e2e',
+        fontFamily: 'Inter, sans-serif',
+        fontSize: '14px',
+      }
+    });
+
     const slides = document.querySelectorAll('.slide');
     const dotsContainer = document.getElementById('dots');
     let current = 0;
