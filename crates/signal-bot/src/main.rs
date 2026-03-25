@@ -234,6 +234,18 @@ async fn main() -> AppResult<()> {
     loop {
         tokio::select! {
             Some(message) = stream.next() => {
+                // Store all group messages for !summary (even if not handled by AI)
+                if message.is_group && !message.text.starts_with('!') {
+                    let conversation_id = message.reply_target().to_string();
+                    let content = format!("{}: {}", message.source, message.text);
+                    if let Err(e) = conversations
+                        .add_message(&conversation_id, "user", &content, None)
+                        .await
+                    {
+                        warn!("Failed to store group message for summary: {}", e);
+                    }
+                }
+
                 // Translation interceptor runs before command handlers
                 if let Some(ref ti) = translation_interceptor {
                     let was_translation_group = ti.try_translate(&message).await;
