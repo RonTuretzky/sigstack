@@ -75,9 +75,30 @@ crates/
   signal-client/               # Signal CLI REST API client
   signal-registration-proxy/   # Multi-tenant registration service
   tools/                       # Tool use system (calculator, weather, web search)
+messaging-daemon/              # Python messaging daemon (unified API + email + confirmation)
 web/                           # React frontend (Vite + Tailwind)
 docker/                        # Docker Compose configs
 ```
+
+## Messaging Daemon (optional companion service)
+
+An optional Python-based messaging daemon that adds:
+
+- **Unified HTTP API** (port 6000) — query messages across Signal and email backends with filters (sender, subject, time range, etc.)
+- **Human-in-the-loop send confirmation** (port 7000) — outbound messages from AI agents require human approval via a browser-based confirmation page
+- **Email backend** — IMAP/SMTP support (tested with Protonmail Bridge, works with Gmail, Fastmail, etc.)
+- **SQLite message archive** — persistent, queryable message store across all backends
+
+### Enable it
+
+```bash
+cd docker
+docker compose --profile messaging-daemon up -d
+```
+
+Port 6000 (API) is exposed for agent access. Port 7000 (confirmation UI) is bound to localhost only.
+
+See [messaging-daemon/](./messaging-daemon/) for full setup and API docs.
 
 ## Documentation
 
