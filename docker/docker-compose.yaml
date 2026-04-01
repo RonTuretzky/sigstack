@@ -103,10 +103,31 @@ services:
       start_period: 120s
     restart: unless-stopped
 
+  messaging-daemon:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile.messaging-daemon
+    container_name: messaging-daemon
+    environment:
+      - BIND_HOST=0.0.0.0
+      - MESSAGING_DAEMON_DIR=/data
+    volumes:
+      - daemon-data:/data
+    ports:
+      - "6000:6000"
+      - "127.0.0.1:7000:7000"
+    networks:
+      - internal
+    restart: unless-stopped
+    profiles:
+      - messaging-daemon
+
 volumes:
   signal-config:
     driver: local
   registry-data:
+    driver: local
+  daemon-data:
     driver: local
 
 networks:

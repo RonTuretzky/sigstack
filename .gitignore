@@ -18,6 +18,13 @@ docker/.env
 .DS_Store
 phala.env
 
+# Python
+__pycache__/
+*.pyc
+*.egg-info/
+dist/
+build/
+
 # Git worktrees
 .worktrees/
 signal-backup.tar.gz
